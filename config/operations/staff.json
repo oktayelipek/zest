@@ -1,0 +1,8 @@
+[
+  {
+    "id": "owner",
+    "displayName": "Owner",
+    "productivityMultiplier": 1.0,
+    "hourlyCostMinor": 0
+  }
+]

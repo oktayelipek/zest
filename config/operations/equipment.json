@@ -1,0 +1,8 @@
+[
+  {
+    "id": "basic-stand",
+    "displayName": "Basic Stand",
+    "capacity": 1,
+    "cycleSeconds": 30
+  }
+]

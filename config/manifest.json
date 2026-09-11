@@ -1,0 +1,13 @@
+{
+  "version": "zest.vs0.1",
+  "files": {
+    "segments": "customers/segments.json",
+    "ingredients": "products/ingredients.json",
+    "recipes": "products/recipes.json",
+    "locations": "world/locations.json",
+    "weather": "world/weather.json",
+    "stations": "operations/stations.json",
+    "equipment": "operations/equipment.json",
+    "staff": "operations/staff.json"
+  }
+}

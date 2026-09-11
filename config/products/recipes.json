@@ -1,0 +1,44 @@
+[
+  {
+    "id": "classic",
+    "displayName": "Classic Lemonade",
+    "ingredients": [
+      { "ingredientId": "lemon", "quantity": 1, "unit": "each" },
+      { "ingredientId": "sugar", "quantity": 25, "unit": "g" },
+      { "ingredientId": "water", "quantity": 300, "unit": "ml" }
+    ],
+    "salePriceMinor": 350,
+    "prepSeconds": 30,
+    "steps": [
+      {
+        "id": "prepare",
+        "durationSeconds": 30,
+        "stationId": "service-counter",
+        "equipmentId": "basic-stand",
+        "staffId": "owner"
+      }
+    ]
+  }
+  ,
+  {
+    "id": "berry",
+    "displayName": "Berry Lemonade",
+    "ingredients": [
+      { "ingredientId": "lemon", "quantity": 1, "unit": "each" },
+      { "ingredientId": "berry", "quantity": 60, "unit": "g" },
+      { "ingredientId": "sugar", "quantity": 20, "unit": "g" },
+      { "ingredientId": "water", "quantity": 300, "unit": "ml" }
+    ],
+    "salePriceMinor": 425,
+    "prepSeconds": 35,
+    "steps": [
+      {
+        "id": "prepare",
+        "durationSeconds": 35,
+        "stationId": "service-counter",
+        "equipmentId": "basic-stand",
+        "staffId": "owner"
+      }
+    ]
+  }
+]

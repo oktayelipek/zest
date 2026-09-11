@@ -1,0 +1,58 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Texture2D" path="res://art/production/ai-layered-v01/stand-body.png" id="1_body"]
+[ext_resource type="Texture2D" path="res://art/production/ai-layered-v01/vendor-poses/vendor-idle.png" id="2_idle"]
+[ext_resource type="Texture2D" path="res://art/production/ai-layered-v01/stand-front-occluder.png" id="3_front"]
+[ext_resource type="Texture2D" path="res://art/production/ai-layered-v01/vendor-poses/vendor-prepare.png" id="4_prepare"]
+[ext_resource type="Texture2D" path="res://art/production/ai-layered-v01/vendor-poses/vendor-pour.png" id="5_pour"]
+[ext_resource type="Texture2D" path="res://art/production/ai-layered-v01/vendor-poses/vendor-handoff.png" id="6_handoff"]
+[ext_resource type="Script" path="res://scripts/VendorVisual.cs" id="7_vendor_script"]
+[ext_resource type="Texture2D" path="res://art/production/ai-layered-v01/vendor-poses/vendor-reach.png" id="8_reach"]
+[ext_resource type="Texture2D" path="res://art/production/ai-layered-v01/vendor-poses/vendor-cup-center.png" id="9_cup_center"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_vendor"]
+animations = [{
+"frames": [{"duration": 1.0, "texture": ExtResource("2_idle")}],
+"loop": true,
+"name": &"idle",
+"speed": 1.0
+}, {
+"frames": [{"duration": 0.45, "texture": ExtResource("8_reach")}, {"duration": 0.55, "texture": ExtResource("4_prepare")}],
+"loop": true,
+"name": &"prepare",
+"speed": 2.0
+}, {
+"frames": [{"duration": 1.0, "texture": ExtResource("5_pour")}],
+"loop": true,
+"name": &"pour",
+"speed": 1.0
+}, {
+"frames": [{"duration": 0.42, "texture": ExtResource("9_cup_center")}, {"duration": 0.58, "texture": ExtResource("6_handoff")}],
+"loop": false,
+"name": &"handoff",
+"speed": 2.5
+}]
+
+[node name="ZestStandBody" type="Node2D"]
+texture_filter = 1
+
+[node name="Body" type="Sprite2D" parent="."]
+position = Vector2(0, -49)
+scale = Vector2(0.11067708, 0.11067708)
+texture = ExtResource("1_body")
+
+[node name="VendorAnchor" type="Marker2D" parent="."]
+position = Vector2(0, -44)
+
+[node name="Vendor" type="AnimatedSprite2D" parent="VendorAnchor"]
+position = Vector2(0, -1)
+scale = Vector2(0.041, 0.041)
+sprite_frames = SubResource("SpriteFrames_vendor")
+animation = &"idle"
+autoplay = "idle"
+script = ExtResource("7_vendor_script")
+
+[node name="FrontOccluder" type="Sprite2D" parent="."]
+position = Vector2(0, -49)
+scale = Vector2(0.11067708, 0.11067708)
+texture = ExtResource("3_front")

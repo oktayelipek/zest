@@ -1,0 +1,9 @@
+.godot/
+.idea/
+.vscode/
+bin/
+obj/
+TestResults/
+*.user
+*.suo
+

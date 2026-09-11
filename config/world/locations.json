@@ -1,0 +1,23 @@
+[
+  {
+    "id": "park",
+    "displayName": "Park",
+    "footTrafficMultiplier": 1.0,
+    "weekdayMultiplier": 1.0,
+    "weekendMultiplier": 1.25,
+    "trafficCurve": [
+      { "hour": 0, "opportunitiesPerHour": 0 }, { "hour": 1, "opportunitiesPerHour": 0 },
+      { "hour": 2, "opportunitiesPerHour": 0 }, { "hour": 3, "opportunitiesPerHour": 0 },
+      { "hour": 4, "opportunitiesPerHour": 0 }, { "hour": 5, "opportunitiesPerHour": 1 },
+      { "hour": 6, "opportunitiesPerHour": 3 }, { "hour": 7, "opportunitiesPerHour": 6 },
+      { "hour": 8, "opportunitiesPerHour": 10 }, { "hour": 9, "opportunitiesPerHour": 12 },
+      { "hour": 10, "opportunitiesPerHour": 14 }, { "hour": 11, "opportunitiesPerHour": 16 },
+      { "hour": 12, "opportunitiesPerHour": 20 }, { "hour": 13, "opportunitiesPerHour": 22 },
+      { "hour": 14, "opportunitiesPerHour": 20 }, { "hour": 15, "opportunitiesPerHour": 18 },
+      { "hour": 16, "opportunitiesPerHour": 16 }, { "hour": 17, "opportunitiesPerHour": 14 },
+      { "hour": 18, "opportunitiesPerHour": 12 }, { "hour": 19, "opportunitiesPerHour": 9 },
+      { "hour": 20, "opportunitiesPerHour": 6 }, { "hour": 21, "opportunitiesPerHour": 3 },
+      { "hour": 22, "opportunitiesPerHour": 1 }, { "hour": 23, "opportunitiesPerHour": 0 }
+    ]
+  }
+]

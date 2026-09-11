@@ -1,0 +1,46 @@
+[
+  {
+    "id": "lemon",
+    "displayName": "Lemon",
+    "unit": "each",
+    "initialStock": 40,
+    "unitCostMinor": 35,
+    "sweetness": 0.05,
+    "acidity": 1.0,
+    "intensity": 0.9,
+    "coldness": 0.0
+  },
+  {
+    "id": "sugar",
+    "displayName": "Sugar",
+    "unit": "g",
+    "initialStock": 5000,
+    "unitCostMinor": 1,
+    "sweetness": 1.0,
+    "acidity": 0.0,
+    "intensity": 0.4,
+    "coldness": 0.0
+  },
+  {
+    "id": "water",
+    "displayName": "Water",
+    "unit": "ml",
+    "initialStock": 20000,
+    "unitCostMinor": 0,
+    "sweetness": 0.0,
+    "acidity": 0.0,
+    "intensity": 0.0,
+    "coldness": 0.3
+  },
+  {
+    "id": "berry",
+    "displayName": "Berry",
+    "unit": "g",
+    "initialStock": 2400,
+    "unitCostMinor": 2,
+    "sweetness": 0.7,
+    "acidity": 0.4,
+    "intensity": 0.75,
+    "coldness": 0.1
+  }
+]

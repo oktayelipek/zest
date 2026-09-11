@@ -1,0 +1,26 @@
+[
+  {
+    "id": "sunny",
+    "displayName": "Sunny",
+    "arrivalMultiplier": 1.2,
+    "weight": 0.55,
+    "minTemperatureC": 18,
+    "maxTemperatureC": 34
+  },
+  {
+    "id": "cloudy",
+    "displayName": "Cloudy",
+    "arrivalMultiplier": 0.9,
+    "weight": 0.30,
+    "minTemperatureC": 12,
+    "maxTemperatureC": 25
+  },
+  {
+    "id": "rain",
+    "displayName": "Rain",
+    "arrivalMultiplier": 0.55,
+    "weight": 0.15,
+    "minTemperatureC": 8,
+    "maxTemperatureC": 20
+  }
+]

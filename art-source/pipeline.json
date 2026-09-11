@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "sourceGridPixels": 16,
+  "palette": [
+    "#00000000", "#292621FF", "#253333FF", "#F2EAD8FF", "#FFF8E8FF",
+    "#E8B447FF", "#4F7155FF", "#A65338FF", "#557C78FF", "#934F64FF",
+    "#91A76FFF", "#D8C9AAFF", "#71543AFF", "#E7B990FF", "#C98A42FF",
+    "#2F4A3CFF", "#738C55FF", "#A6B85EFF", "#4A3528FF", "#D68E2EFF",
+    "#7FA6A0FF", "#3F4D3DFF", "#A49A85FF", "#EACB6AFF"
+  ],
+  "assets": [
+    {
+      "id": "grass_base",
+      "kind": "tile",
+      "source": "art-source/exports/tile_grass_base_idle_v01.png",
+      "runtime": "game/art/pixel/tiles/tile_grass_base_idle_v01.png",
+      "width": 16, "height": 16,
+      "frameWidth": 16, "frameHeight": 16,
+      "columns": 1, "rows": 1,
+      "pivotX": 8, "pivotY": 16,
+      "generator": "grass_tile"
+    },
+    {
+      "id": "lemon_crate",
+      "kind": "prop",
+      "source": "art-source/exports/prop_lemon_crate_idle_v01.png",
+      "runtime": "game/art/pixel/props/prop_lemon_crate_idle_v01.png",
+      "width": 32, "height": 32,
+      "frameWidth": 32, "frameHeight": 32,
+      "columns": 1, "rows": 1,
+      "pivotX": 16, "pivotY": 28,
+      "generator": "lemon_crate"
+    },
+    {
+      "id": "guest_base_walk",
+      "kind": "character",
+      "source": "art-source/exports/chr_guest_base_walk_v01.png",
+      "runtime": "game/art/pixel/characters/chr_guest_base_walk_v01.png",
+      "width": 64, "height": 96,
+      "frameWidth": 16, "frameHeight": 24,
+      "columns": 4, "rows": 4,
+      "pivotX": 8, "pivotY": 23,
+      "generator": "guest_walk"
+    },
+    {
+      "id": "zest_stand_base",
+      "kind": "prop",
+      "source": "art-source/exports/prop_zest_stand_base_idle_v01.png",
+      "runtime": "game/art/pixel/props/prop_zest_stand_base_idle_v01.png",
+      "width": 160, "height": 112,
+      "frameWidth": 160, "frameHeight": 112,
+      "columns": 1, "rows": 1,
+      "pivotX": 80, "pivotY": 112,
+      "generator": "zest_stand"
+    },
+    {
+      "id": "park_tree_leafy",
+      "kind": "prop",
+      "source": "art-source/exports/prop_park_tree_leafy_idle_v01.png",
+      "runtime": "game/art/pixel/props/prop_park_tree_leafy_idle_v01.png",
+      "width": 80, "height": 96,
+      "frameWidth": 80, "frameHeight": 96,
+      "columns": 1, "rows": 1,
+      "pivotX": 40, "pivotY": 96,
+      "generator": "park_tree"
+    },
+    {
+      "id": "park_bench_wood",
+      "kind": "prop",
+      "source": "art-source/exports/prop_park_bench_wood_idle_v01.png",
+      "runtime": "game/art/pixel/props/prop_park_bench_wood_idle_v01.png",
+      "width": 64, "height": 40,
+      "frameWidth": 64, "frameHeight": 40,
+      "columns": 1, "rows": 1,
+      "pivotX": 32, "pivotY": 40,
+      "generator": "park_bench"
+    },
+    {
+      "id": "park_lamp_sign",
+      "kind": "prop",
+      "source": "art-source/exports/prop_park_lamp_sign_idle_v01.png",
+      "runtime": "game/art/pixel/props/prop_park_lamp_sign_idle_v01.png",
+      "width": 48, "height": 96,
+      "frameWidth": 48, "frameHeight": 96,
+      "columns": 1, "rows": 1,
+      "pivotX": 24, "pivotY": 96,
+      "generator": "park_lamp_sign"
+    },
+    {
+      "id": "park_planter_flowers",
+      "kind": "prop",
+      "source": "art-source/exports/prop_park_planter_flowers_idle_v01.png",
+      "runtime": "game/art/pixel/props/prop_park_planter_flowers_idle_v01.png",
+      "width": 48, "height": 32,
+      "frameWidth": 48, "frameHeight": 32,
+      "columns": 1, "rows": 1,
+      "pivotX": 24, "pivotY": 32,
+      "generator": "park_planter"
+    },
+    {
+      "id": "path_edge_base",
+      "kind": "tile",
+      "source": "art-source/exports/tile_path_edge_base_idle_v01.png",
+      "runtime": "game/art/pixel/tiles/tile_path_edge_base_idle_v01.png",
+      "width": 16, "height": 16,
+      "frameWidth": 16, "frameHeight": 16,
+      "columns": 1, "rows": 1,
+      "pivotX": 8, "pivotY": 16,
+      "generator": "path_edge"
+    }
+  ]
+}

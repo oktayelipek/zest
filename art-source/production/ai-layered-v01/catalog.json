@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "statusVocabulary": ["candidate", "technical-pass", "integrated", "visual-approved"],
+  "assets": [
+    {
+      "id": "z-ch-student-p0-01",
+      "role": "customer-student-directional",
+      "source": "art-source/production/ai-layered-v01/customer-student-v01",
+      "runtime": "game/art/production/ai-layered-v01/customer-student-v01",
+      "poses": ["south-idle", "south-walk-a", "south-walk-b", "north-walk-a", "north-walk-b", "west-walk-a", "west-walk-b", "south-receive", "west-leave", "south-west-turn", "west-south-turn"],
+      "sourceSize": [800, 1400],
+      "worldSizeApprox": [28, 49],
+      "status": "integrated",
+      "provenance": "built-in Imagegen identity-preserving generation plus user-authorized checkerboard cleanup and proportional normalization",
+      "limitation": "first student segment only; east uses runtime mirror; leave and turn assets are prepared, while turn-state runtime hookup remains"
+    },
+    {
+      "id": "z-st-body-01",
+      "role": "stand-body",
+      "source": "art-source/production/ai-layered-v01/stand-body.png",
+      "runtime": "game/art/production/ai-layered-v01/stand-body.png",
+      "sourceSize": [1536, 1024],
+      "worldWidth": 170,
+      "pivot": [0, 8],
+      "status": "integrated",
+      "provenance": "built-in image generation plus user-authorized deterministic alpha cleanup"
+    },
+    {
+      "id": "z-st-front-01",
+      "role": "vendor-occluder",
+      "source": "art-source/production/ai-layered-v01/stand-front-occluder.png",
+      "runtime": "game/art/production/ai-layered-v01/stand-front-occluder.png",
+      "sourceSize": [1536, 1024],
+      "worldWidth": 170,
+      "status": "integrated",
+      "provenance": "unchanged pixels copied from stand body at source row 720 and below"
+    },
+    {
+      "id": "z-ch-vendor-idle-01",
+      "role": "vendor-idle",
+      "source": "art-source/production/ai-layered-v01/vendor-poses/vendor-idle.png",
+      "runtime": "game/art/production/ai-layered-v01/vendor-poses/vendor-idle.png",
+      "sourceSize": [720, 850],
+      "worldSizeApprox": [30, 35],
+      "status": "integrated",
+      "provenance": "built-in image generation; genuine source alpha; normalized to shared pose canvas"
+    },
+    {
+      "id": "z-ch-vendor-actions-01",
+      "role": "vendor-service-key-poses",
+      "source": "art-source/production/ai-layered-v01/vendor-poses",
+      "runtime": "game/art/production/ai-layered-v01/vendor-poses",
+      "poses": ["reach", "prepare", "pour", "cup-center", "handoff"],
+      "sourceSize": [720, 850],
+      "worldSizeApprox": [30, 35],
+      "status": "integrated",
+      "provenance": "built-in image generation plus user-authorized exterior checkerboard cleanup and proportional normalization",
+      "limitation": "key-pose animation; blink, hair/apron secondary motion and a second pour frame remain to be authored"
+    }
+  ],
+  "integration": {
+    "scene": "game/scenes/zest_stand_body.tscn",
+    "consumer": "game/scripts/ProductionParkCanvas.cs",
+    "baseStandActive": true,
+    "upgradeFallback": "game/art/production/final-grid-v03/prop_zest_stand_upgrades_4x1_v01.png",
+    "visualEvidence": [
+      "docs/artifacts/art-01-business.png",
+      "docs/artifacts/p0-layered-stand-vendor-1080p.png",
+      "docs/artifacts/vendor-animation-poses-v02.png",
+      "docs/artifacts/vendor-handoff-in-world-1080p.png"
+    ],
+    "knownIssue": "World status tags are now compact and unclipped but remain visually oversized. Vendor still needs blink, hair/apron secondary motion and a second pour frame before final animation sign-off."
+  }
+}

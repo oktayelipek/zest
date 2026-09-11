@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "sourceGridPixels": 16,
+  "directionRows": [
+    "south",
+    "west",
+    "east",
+    "north"
+  ],
+  "assets": [
+    {
+      "Id": "grass_base",
+      "Kind": "tile",
+      "path": "res://art/pixel/tiles/tile_grass_base_idle_v01.png",
+      "frame": {
+        "width": 16,
+        "height": 16,
+        "columns": 1,
+        "rows": 1
+      },
+      "pivot": {
+        "x": 8,
+        "y": 16
+      }
+    },
+    {
+      "Id": "lemon_crate",
+      "Kind": "prop",
+      "path": "res://art/pixel/props/prop_lemon_crate_idle_v01.png",
+      "frame": {
+        "width": 32,
+        "height": 32,
+        "columns": 1,
+        "rows": 1
+      },
+      "pivot": {
+        "x": 16,
+        "y": 28
+      }
+    },
+    {
+      "Id": "guest_base_walk",
+      "Kind": "character",
+      "path": "res://art/pixel/characters/chr_guest_base_walk_v01.png",
+      "frame": {
+        "width": 16,
+        "height": 24,
+        "columns": 4,
+        "rows": 4
+      },
+      "pivot": {
+        "x": 8,
+        "y": 23
+      },
+      "animation": {
+        "fps": 8,
+        "loop": true
+      }
+    },
+    {
+      "Id": "zest_stand_base",
+      "Kind": "prop",
+      "path": "res://art/pixel/props/prop_zest_stand_base_idle_v01.png",
+      "frame": {
+        "width": 160,
+        "height": 112,
+        "columns": 1,
+        "rows": 1
+      },
+      "pivot": {
+        "x": 80,
+        "y": 112
+      }
+    },
+    {
+      "Id": "park_tree_leafy",
+      "Kind": "prop",
+      "path": "res://art/pixel/props/prop_park_tree_leafy_idle_v01.png",
+      "frame": {
+        "width": 80,
+        "height": 96,
+        "columns": 1,
+        "rows": 1
+      },
+      "pivot": {
+        "x": 40,
+        "y": 96
+      }
+    },
+    {
+      "Id": "park_bench_wood",
+      "Kind": "prop",
+      "path": "res://art/pixel/props/prop_park_bench_wood_idle_v01.png",
+      "frame": {
+        "width": 64,
+        "height": 40,
+        "columns": 1,
+        "rows": 1
+      },
+      "pivot": {
+        "x": 32,
+        "y": 40
+      }
+    },
+    {
+      "Id": "park_lamp_sign",
+      "Kind": "prop",
+      "path": "res://art/pixel/props/prop_park_lamp_sign_idle_v01.png",
+      "frame": {
+        "width": 48,
+        "height": 96,
+        "columns": 1,
+        "rows": 1
+      },
+      "pivot": {
+        "x": 24,
+        "y": 96
+      }
+    },
+    {
+      "Id": "park_planter_flowers",
+      "Kind": "prop",
+      "path": "res://art/pixel/props/prop_park_planter_flowers_idle_v01.png",
+      "frame": {
+        "width": 48,
+        "height": 32,
+        "columns": 1,
+        "rows": 1
+      },
+      "pivot": {
+        "x": 24,
+        "y": 32
+      }
+    },
+    {
+      "Id": "path_edge_base",
+      "Kind": "tile",
+      "path": "res://art/pixel/tiles/tile_path_edge_base_idle_v01.png",
+      "frame": {
+        "width": 16,
+        "height": 16,
+        "columns": 1,
+        "rows": 1
+      },
+      "pivot": {
+        "x": 8,
+        "y": 16
+      }
+    }
+  ]
+}

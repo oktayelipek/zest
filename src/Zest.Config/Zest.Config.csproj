@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Zest.Domain\Zest.Domain.csproj" />
+  </ItemGroup>
+</Project>
+

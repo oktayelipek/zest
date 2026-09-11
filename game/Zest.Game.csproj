@@ -1,0 +1,11 @@
+<Project Sdk="Godot.NET.Sdk/4.7.2">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\src\Zest.Domain\Zest.Domain.csproj" />
+    <ProjectReference Include="..\src\Zest.Config\Zest.Config.csproj" />
+    <ProjectReference Include="..\src\Zest.Persistence\Zest.Persistence.csproj" />
+  </ItemGroup>
+</Project>
