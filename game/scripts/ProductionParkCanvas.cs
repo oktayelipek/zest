@@ -27,6 +27,7 @@ public partial class ProductionParkCanvas : Node2D
     ];
     public ZestStandVisual Stand { get; private set; } = null!;
     private Sprite2D _background = null!;
+    private Sprite2D _backgroundTransition = null!;
     private Texture2D _dayBackground = null!;
     private Texture2D? _eveningBackground;
     private const string EveningBackgroundPath = FinalGridRoot + "bg_riverside_evening_640x360_v01.png";
@@ -47,6 +48,15 @@ public partial class ProductionParkCanvas : Node2D
             ZIndex = -100,
         };
         AddChild(_background);
+        _backgroundTransition = new Sprite2D
+        {
+            Name = "RiversideBackgroundTransition",
+            Centered = true,
+            TextureFilter = TextureFilterEnum.Nearest,
+            ZIndex = -99,
+            Visible = false,
+        };
+        AddChild(_backgroundTransition);
 
         // Opt-in proof path for the native Z-EN-01 ground; production remains on the
         // approved baked composition until a visual comparison is accepted.
@@ -65,11 +75,15 @@ public partial class ProductionParkCanvas : Node2D
         TryAddOptionalProp("EditorialChalkboard", "sign_chalkboard_editorial_v01.png", new(-92, 14));
         TryAddOptionalProp("TrailSignpost", "sign_signpost_v01.png", new(268, 88));
         TryAddOptionalProp("StandMenuBoard", "sign_stand_menu_v01.png", new(72, -6));
-        TryAddOptionalProp("PondDuck", "prop_park_duck_idle_v01.png", new(212, -144));
-        TryAddOptionalProp("BenchSongbird", "prop_park_songbird_idle_v01.png", new(-194, -6));
         TryAddOptionalProp("EditorialBanner", "sign_banner_editorial_v01.png", new(-132, -8));
-        TryAddOptionalProp("PondWaterLily", "prop_water_lily_v01.png", new(180, -110));
-        TryAddOptionalProp("PondCattail", "prop_water_cattail_v01.png", new(240, -100));
+        AddAnimatedProp("BenchSongbird", FinalGridRoot + "prop_park_songbird_idle_6x1_v01.png", new(-194, -6), 6, 6, false);
+        AddAnimatedProp("PondWaterLily", FinalGridRoot + "prop_water_lily_idle_6x1_v01.png", new(180, -110), 6, 5, false);
+        AddAnimatedProp("PondDuck", FinalGridRoot + "prop_park_duck_idle_4x1_v01.png", new(212, -144), 4, 5, false);
+        AddAnimatedProp("CattailSway", FinalGridRoot + "prop_water_cattail_sway_4x1_v01.png", new(240, -100), 4, 4, false);
+        if (OS.GetEnvironment("ZEST_RAIN_VFX") == "1")
+            AddAnimatedProp("RainAwningVfx", "res://art/production/ai-layered-v01/weather-overlays/awning-rain-4x1_v01.png", new(0, 20), 4, 10, false).ZIndex = 4;
+        if (OS.GetEnvironment("ZEST_SUN_VFX") == "1")
+            AddAnimatedProp("SunAwningVfx", "res://art/production/ai-layered-v01/weather-overlays/awning-sun-6x1_v01.png", new(0, 20), 6, 6, false).ZIndex = 4;
         Stand = new ZestStandVisual { Name = "ZestStand", Position = new Vector2(0, 20), ZIndex = 1 };
         Stand.Configure(StandGridRoot);
         AddChild(Stand);
@@ -80,7 +94,17 @@ public partial class ProductionParkCanvas : Node2D
     {
         if (_background is null) return;
         Texture2D target = evening && _eveningBackground is not null ? _eveningBackground : _dayBackground;
-        if (_background.Texture != target) _background.Texture = target;
+        if (_background.Texture == target) return;
+        _backgroundTransition.Texture = target;
+        _backgroundTransition.Modulate = new Color(1, 1, 1, 0);
+        _backgroundTransition.Visible = true;
+        Tween fade = CreateTween().SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
+        fade.TweenProperty(_backgroundTransition, "modulate:a", 1f, .65f);
+        fade.TweenCallback(Callable.From(() =>
+        {
+            _background.Texture = target;
+            _backgroundTransition.Visible = false;
+        }));
     }
 
     /// <summary>Adds an idle prop only if the PNG exists — lets optional art land without editing this method.</summary>
@@ -91,19 +115,22 @@ public partial class ProductionParkCanvas : Node2D
         return AddAnimatedProp(name, path, foot, 1, 0);
     }
 
-    private Node2D AddAnimatedProp(string name, string texturePath, Vector2 foot, int columns, double fps)
+    private Node2D AddAnimatedProp(string name, string texturePath, Vector2 foot, int columns, double fps, bool addShadow = true)
     {
         Texture2D texture = ResourceLoader.Load<Texture2D>(texturePath);
         int frameWidth = texture.GetWidth() / columns;
         int frameHeight = texture.GetHeight();
         Node2D root = new() { Name = name, Position = foot, ZIndex = 1 };
-        Polygon2D shadow = new()
+        if (addShadow)
         {
-            Name = "ContactShadow",
-            Polygon = [new(-frameWidth * .34f, -4), new(frameWidth * .34f, -4), new(frameWidth * .43f, 2), new(-frameWidth * .43f, 2)],
-            Color = new Color(ZestStyle.Palette.WorldShadow, .34f),
-        };
-        root.AddChild(shadow);
+            Polygon2D shadow = new()
+            {
+                Name = "ContactShadow",
+                Polygon = [new(-frameWidth * .34f, -4), new(frameWidth * .34f, -4), new(frameWidth * .43f, 2), new(-frameWidth * .43f, 2)],
+                Color = new Color(ZestStyle.Palette.WorldShadow, .34f),
+            };
+            root.AddChild(shadow);
+        }
 
         SpriteFrames frames = new();
         frames.AddAnimation("idle");
