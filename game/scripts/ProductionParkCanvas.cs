@@ -65,11 +65,13 @@ public partial class ProductionParkCanvas : Node2D
         TryAddOptionalProp("EditorialChalkboard", "sign_chalkboard_editorial_v01.png", new(-92, 14));
         TryAddOptionalProp("TrailSignpost", "sign_signpost_v01.png", new(268, 88));
         TryAddOptionalProp("StandMenuBoard", "sign_stand_menu_v01.png", new(72, -6));
-        TryAddOptionalProp("PondDuck", "prop_park_duck_idle_v01.png", new(212, -144));
         TryAddOptionalProp("BenchSongbird", "prop_park_songbird_idle_v01.png", new(-194, -6));
         TryAddOptionalProp("EditorialBanner", "sign_banner_editorial_v01.png", new(-132, -8));
         TryAddOptionalProp("PondWaterLily", "prop_water_lily_v01.png", new(180, -110));
-        TryAddOptionalProp("PondCattail", "prop_water_cattail_v01.png", new(240, -100));
+        AddAnimatedProp("PondDuck", FinalGridRoot + "prop_park_duck_idle_4x1_v01.png", new(212, -144), 4, 5, false);
+        AddAnimatedProp("CattailSway", FinalGridRoot + "prop_water_cattail_sway_4x1_v01.png", new(240, -100), 4, 4, false);
+        if (OS.GetEnvironment("ZEST_RAIN_VFX") == "1")
+            AddAnimatedProp("RainAwningVfx", "res://art/production/ai-layered-v01/weather-overlays/awning-rain-4x1_v01.png", new(0, 20), 4, 10, false).ZIndex = 4;
         Stand = new ZestStandVisual { Name = "ZestStand", Position = new Vector2(0, 20), ZIndex = 1 };
         Stand.Configure(StandGridRoot);
         AddChild(Stand);
@@ -91,19 +93,22 @@ public partial class ProductionParkCanvas : Node2D
         return AddAnimatedProp(name, path, foot, 1, 0);
     }
 
-    private Node2D AddAnimatedProp(string name, string texturePath, Vector2 foot, int columns, double fps)
+    private Node2D AddAnimatedProp(string name, string texturePath, Vector2 foot, int columns, double fps, bool addShadow = true)
     {
         Texture2D texture = ResourceLoader.Load<Texture2D>(texturePath);
         int frameWidth = texture.GetWidth() / columns;
         int frameHeight = texture.GetHeight();
         Node2D root = new() { Name = name, Position = foot, ZIndex = 1 };
-        Polygon2D shadow = new()
+        if (addShadow)
         {
-            Name = "ContactShadow",
-            Polygon = [new(-frameWidth * .34f, -4), new(frameWidth * .34f, -4), new(frameWidth * .43f, 2), new(-frameWidth * .43f, 2)],
-            Color = new Color(ZestStyle.Palette.WorldShadow, .34f),
-        };
-        root.AddChild(shadow);
+            Polygon2D shadow = new()
+            {
+                Name = "ContactShadow",
+                Polygon = [new(-frameWidth * .34f, -4), new(frameWidth * .34f, -4), new(frameWidth * .43f, 2), new(-frameWidth * .43f, 2)],
+                Color = new Color(ZestStyle.Palette.WorldShadow, .34f),
+            };
+            root.AddChild(shadow);
+        }
 
         SpriteFrames frames = new();
         frames.AddAnimation("idle");
