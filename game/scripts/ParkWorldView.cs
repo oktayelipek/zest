@@ -83,9 +83,12 @@ public partial class ParkWorldView : SubViewportContainer
         SetQueueCustomers(Enumerable.Range(0, length).Select(index => new Guid(index + 1, 0, 0, new byte[8])).ToArray());
     }
 
-    public void SetQueueCustomers(IReadOnlyList<Guid> customerIds, IReadOnlyDictionary<Guid, QueueDepartureKind>? departures = null)
+    private Func<Guid, string?>? _segmentResolver;
+
+    public void SetQueueCustomers(IReadOnlyList<Guid> customerIds, IReadOnlyDictionary<Guid, QueueDepartureKind>? departures = null, Func<Guid, string?>? segmentResolver = null)
     {
         ArgumentNullException.ThrowIfNull(customerIds);
+        _segmentResolver = segmentResolver;
         int clamped = Mathf.Clamp(customerIds.Count, 0, ProductionParkCanvas.QueuePositions.Length);
         if (_queueRoot is null) return;
         if (_customerLeaveInProgress)
@@ -146,7 +149,7 @@ public partial class ParkWorldView : SubViewportContainer
             if (!_queuePeopleById.TryGetValue(id, out HdCustomerActor? customer))
             {
                 customer = new HdCustomerActor { Name = $"QueueGuest_{id:N}" };
-                customer.Configure(walksRoute: false, index % 2, id);
+                customer.Configure(walksRoute: false, index % 2, id, segmentId: _segmentResolver?.Invoke(id));
                 customer.SetSimulationSpeed(_simulationSpeed);
                 customer.SetReducedMotion(_reducedMotion);
                 _queueRoot.AddChild(customer);
@@ -213,7 +216,12 @@ public partial class ParkWorldView : SubViewportContainer
         tween.TweenProperty(_weatherTint, "color", tint, 0.6);
         if (_rain is not null) _rain.SetActive(weatherId == "rain");
         _park?.Stand.SetWeatherOverlay(weatherId);
+        _park?.Stand.SetVendorRainOverlay(weatherId == "rain");
     }
+
+    public void SetStrongMenu(bool active) => _park?.Stand.SetStrongMenuFlag(active);
+
+    public void SetEveningBackground(bool evening) => _park?.SetTimeOfDay(evening);
 
     public void SetReputation(int reputation)
     {

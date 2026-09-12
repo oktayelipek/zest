@@ -11,27 +11,42 @@ public partial class ProductionParkCanvas : Node2D
     private const string FinalGridRoot = "res://art/production/final-grid-v02/";
     private const string StandGridRoot = "res://art/production/final-grid-v03/";
     public const string CustomerAssetRoot = "res://art/production/ai-layered-v01/customer-student-v01/";
+    public const string CustomerVariantRoot = "res://art/production/ai-layered-v01/";
+
+    /// <summary>Resolves the variant folder for a segment, falling back to the student set if the variant is missing.</summary>
+    public static string ResolveCustomerAssetRoot(string? segmentId)
+    {
+        if (string.IsNullOrEmpty(segmentId) || segmentId == "student") return CustomerAssetRoot;
+        string candidate = CustomerVariantRoot + $"customer-{segmentId}-v01/";
+        return ResourceLoader.Exists(candidate + "customer-south-idle.png") ? candidate : CustomerAssetRoot;
+    }
     public static readonly Vector2[] QueuePositions =
     [
         new(10, 34), new(10, 68), new(10, 102), new(10, 136),
         new(44, 136), new(44, 102), new(44, 68), new(44, 34),
     ];
     public ZestStandVisual Stand { get; private set; } = null!;
+    private Sprite2D _background = null!;
+    private Texture2D _dayBackground = null!;
+    private Texture2D? _eveningBackground;
+    private const string EveningBackgroundPath = FinalGridRoot + "bg_riverside_evening_640x360_v01.png";
 
     public void Build()
     {
         TextureFilter = TextureFilterEnum.Nearest;
-        Texture2D background = ResourceLoader.Load<Texture2D>(FinalGridRoot + "bg_riverside_640x360_v02.png");
-        Sprite2D ground = new()
+        _dayBackground = ResourceLoader.Load<Texture2D>(FinalGridRoot + "bg_riverside_640x360_v02.png");
+        if (ResourceLoader.Exists(EveningBackgroundPath))
+            _eveningBackground = ResourceLoader.Load<Texture2D>(EveningBackgroundPath);
+        _background = new Sprite2D
         {
             Name = "RiversideBackground",
-            Texture = background,
+            Texture = _dayBackground,
             Centered = true,
             Scale = Vector2.One,
             TextureFilter = TextureFilterEnum.Nearest,
             ZIndex = -100,
         };
-        AddChild(ground);
+        AddChild(_background);
 
         // Opt-in proof path for the native Z-EN-01 ground; production remains on the
         // approved baked composition until a visual comparison is accepted.
@@ -50,6 +65,14 @@ public partial class ProductionParkCanvas : Node2D
         Stand = new ZestStandVisual { Name = "ZestStand", Position = new Vector2(0, 20), ZIndex = 1 };
         Stand.Configure(StandGridRoot);
         AddChild(Stand);
+    }
+
+    /// <summary>Swap between day and evening backgrounds. If the evening PNG is not present, stays on day.</summary>
+    public void SetTimeOfDay(bool evening)
+    {
+        if (_background is null) return;
+        Texture2D target = evening && _eveningBackground is not null ? _eveningBackground : _dayBackground;
+        if (_background.Texture != target) _background.Texture = target;
     }
 
     private Node2D AddAnimatedProp(string name, string texturePath, Vector2 foot, int columns, double fps)
@@ -126,7 +149,10 @@ public partial class ZestStandVisual : Node2D
     private PixelWorldText _plaqueLabel = null!;
     private PreparedBatchCue _batchCue = null!;
     private Sprite2D? _weatherOverlay;
+    private Sprite2D? _vendorRainOverlay;
+    private Sprite2D? _strongMenuFlag;
     private const string WeatherOverlayRoot = "res://art/production/ai-layered-v01/weather-overlays/";
+    private const string StandOverlayRoot = "res://art/production/ai-layered-v01/stand-overlays/";
     private StandOperatingVisual _operatingState;
     private double _motionTime;
 
@@ -211,6 +237,57 @@ public partial class ZestStandVisual : Node2D
         }
         _weatherOverlay.Texture = ResourceLoader.Load<Texture2D>(path);
         _weatherOverlay.Visible = true;
+    }
+
+    /// <summary>Small rain-hat/coat sprite anchored near the vendor head. Silent no-op if the PNG is absent.</summary>
+    public void SetVendorRainOverlay(bool active)
+    {
+        string path = WeatherOverlayRoot + "vendor-rain-hat.png";
+        if (!active || !ResourceLoader.Exists(path))
+        {
+            if (_vendorRainOverlay is not null) _vendorRainOverlay.Visible = false;
+            return;
+        }
+        if (_vendorRainOverlay is null)
+        {
+            _vendorRainOverlay = new Sprite2D
+            {
+                Name = "VendorRainOverlay",
+                Centered = true,
+                Position = new Vector2(0, -46),
+                TextureFilter = TextureFilterEnum.Nearest,
+                ZIndex = 4,
+                Scale = Vector2.One * 0.041f,
+            };
+            AddChild(_vendorRainOverlay);
+        }
+        _vendorRainOverlay.Texture = ResourceLoader.Load<Texture2D>(path);
+        _vendorRainOverlay.Visible = true;
+    }
+
+    /// <summary>Flag/menu cue shown once Strong Lemonade is on the menu. Silent no-op if the PNG is absent.</summary>
+    public void SetStrongMenuFlag(bool active)
+    {
+        string path = StandOverlayRoot + "strong-menu-flag.png";
+        if (!active || !ResourceLoader.Exists(path))
+        {
+            if (_strongMenuFlag is not null) _strongMenuFlag.Visible = false;
+            return;
+        }
+        if (_strongMenuFlag is null)
+        {
+            _strongMenuFlag = new Sprite2D
+            {
+                Name = "StrongMenuFlag",
+                Centered = true,
+                Position = new Vector2(-58, -92),
+                TextureFilter = TextureFilterEnum.Nearest,
+                ZIndex = 5,
+            };
+            AddChild(_strongMenuFlag);
+        }
+        _strongMenuFlag.Texture = ResourceLoader.Load<Texture2D>(path);
+        _strongMenuFlag.Visible = true;
     }
 
     public void SetPresentation(StandUpgradeVisual upgrade, StandOperatingVisual operatingState, int preparedBatchCount)
@@ -413,19 +490,20 @@ public partial class HdCustomerActor : Node2D
     private const float RuntimeScale = .035f;
     private const float CanvasHeight = 1400;
 
-    public void Configure(bool walksRoute, int idleVariant, Guid customerId, int routeStartIndex = 0)
+    public void Configure(bool walksRoute, int idleVariant, Guid customerId, int routeStartIndex = 0, string? segmentId = null)
     {
-        _south = ResourceLoader.Load<Texture2D>(ProductionParkCanvas.CustomerAssetRoot + "customer-south-idle.png");
-        _southWalkA = ResourceLoader.Load<Texture2D>(ProductionParkCanvas.CustomerAssetRoot + "customer-south-walk-a.png");
-        _southWalkB = ResourceLoader.Load<Texture2D>(ProductionParkCanvas.CustomerAssetRoot + "customer-south-walk-b.png");
-        _north = ResourceLoader.Load<Texture2D>(ProductionParkCanvas.CustomerAssetRoot + "customer-north-walk-a.png");
-        _northWalkB = ResourceLoader.Load<Texture2D>(ProductionParkCanvas.CustomerAssetRoot + "customer-north-walk-b.png");
-        _west = ResourceLoader.Load<Texture2D>(ProductionParkCanvas.CustomerAssetRoot + "customer-west-walk-a.png");
-        _westWalkB = ResourceLoader.Load<Texture2D>(ProductionParkCanvas.CustomerAssetRoot + "customer-west-walk-b.png");
-        _receive = ResourceLoader.Load<Texture2D>(ProductionParkCanvas.CustomerAssetRoot + "customer-south-receive.png");
-        _leave = ResourceLoader.Load<Texture2D>(ProductionParkCanvas.CustomerAssetRoot + "customer-west-leave.png");
-        _southWestTurn = ResourceLoader.Load<Texture2D>(ProductionParkCanvas.CustomerAssetRoot + "customer-south-west-turn.png");
-        _westSouthTurn = ResourceLoader.Load<Texture2D>(ProductionParkCanvas.CustomerAssetRoot + "customer-west-south-turn.png");
+        string root = ProductionParkCanvas.ResolveCustomerAssetRoot(segmentId);
+        _south = ResourceLoader.Load<Texture2D>(root + "customer-south-idle.png");
+        _southWalkA = ResourceLoader.Load<Texture2D>(root + "customer-south-walk-a.png");
+        _southWalkB = ResourceLoader.Load<Texture2D>(root + "customer-south-walk-b.png");
+        _north = ResourceLoader.Load<Texture2D>(root + "customer-north-walk-a.png");
+        _northWalkB = ResourceLoader.Load<Texture2D>(root + "customer-north-walk-b.png");
+        _west = ResourceLoader.Load<Texture2D>(root + "customer-west-walk-a.png");
+        _westWalkB = ResourceLoader.Load<Texture2D>(root + "customer-west-walk-b.png");
+        _receive = ResourceLoader.Load<Texture2D>(root + "customer-south-receive.png");
+        _leave = ResourceLoader.Load<Texture2D>(root + "customer-west-leave.png");
+        _southWestTurn = ResourceLoader.Load<Texture2D>(root + "customer-south-west-turn.png");
+        _westSouthTurn = ResourceLoader.Load<Texture2D>(root + "customer-west-south-turn.png");
         _walksRoute = walksRoute;
         CustomerId = customerId;
         int startIndex = ((routeStartIndex % Route.Length) + Route.Length) % Route.Length;

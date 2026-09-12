@@ -998,7 +998,7 @@ public partial class Main : Control
             .Where(order => order.Status is OrderStatus.Served or OrderStatus.Cancelled)
             .Where(order => _observedDepartures.Add(order.OrderId))
             .ToDictionary(order => order.OrderId, order => order.Status == OrderStatus.Cancelled ? QueueDepartureKind.Abandoned : QueueDepartureKind.Served);
-        _parkWorld.SetQueueCustomers(queueCustomers, departures);
+        _parkWorld.SetQueueCustomers(queueCustomers, departures, ResolveSegmentForOrder);
         ApplyRegularNameTags(queueCustomers);
         ApplyOrderBadges(queueCustomers);
         int stock = _runner.SellableServings("classic");
@@ -1008,6 +1008,8 @@ public partial class Main : Control
         _parkWorld.SetVendorPose(ResolveVendorPose(snapshot.SimTime));
         _parkWorld.SetWeather(_runner.WeatherId);
         _parkWorld.SetReputation(_state.Progression.Reputation);
+        _parkWorld.SetStrongMenu(_state.Progression.Has(MenuIds.Strong));
+        _parkWorld.SetEveningBackground(snapshot.SimTime >= 8 * 60 * 60);
         EmitSaleAndLossJuice();
         if (_contextPanel.Visible)
         {
@@ -1046,6 +1048,13 @@ public partial class Main : Control
             SpawnFloater(LossReasonBadge(dominant), ZestStyle.Palette.Rust, anchorRight: false);
             _observedLossCount = todayLosses.Length;
         }
+    }
+
+    private string? ResolveSegmentForOrder(Guid orderId)
+    {
+        if (!_state.Operations.Orders.TryGetValue(orderId, out OrderState? order)) return null;
+        if (order.CustomerId is null || !Guid.TryParse(order.CustomerId, out Guid customerGuid)) return null;
+        return _state.Customers.Customers.TryGetValue(customerGuid, out CustomerState? customer) ? customer.SegmentId : null;
     }
 
     private void ApplyOrderBadges(Guid[] queueCustomers)
