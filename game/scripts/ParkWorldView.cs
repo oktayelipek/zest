@@ -278,6 +278,8 @@ public partial class ParkWorldView : SubViewportContainer
         _viewport.AddChild(_park);
         _park.Build();
 
+        Node2D queueRings = new QueueRings { Name = "QueueRings", ZIndex = 0 };
+        _park.AddChild(queueRings);
         _queueRoot = new Node2D { Name = "ReadableQueue", YSortEnabled = true, ZIndex = 1 };
         _park.AddChild(_queueRoot);
 
@@ -437,6 +439,33 @@ public partial class ParkWorldView : SubViewportContainer
             float y = initial ? _rng.RandfRange(0, h) : _rng.RandfRange(-20, 0);
             _positions[i] = new Vector2(x, y);
             _speeds[i] = _rng.RandfRange(220, 340);
+        }
+    }
+
+    /// <summary>Dashed cream rings on the ground marking each queue position — matches the reference visual.</summary>
+    private partial class QueueRings : Node2D
+    {
+        public override void _Draw()
+        {
+            Color color = new(ZestStyle.Palette.Cream, 0.55f);
+            foreach (Vector2 slot in ProductionParkCanvas.QueuePositions)
+            {
+                DrawDashedEllipse(slot + new Vector2(0, 2), 10, 4, color);
+            }
+        }
+
+        private void DrawDashedEllipse(Vector2 center, float rx, float ry, Color color)
+        {
+            const int segments = 16;
+            for (int i = 0; i < segments; i++)
+            {
+                if (i % 2 != 0) continue;
+                float a0 = i * Mathf.Tau / segments;
+                float a1 = (i + 1) * Mathf.Tau / segments;
+                Vector2 p0 = center + new Vector2(Mathf.Cos(a0) * rx, Mathf.Sin(a0) * ry);
+                Vector2 p1 = center + new Vector2(Mathf.Cos(a1) * rx, Mathf.Sin(a1) * ry);
+                DrawLine(p0, p1, color, 1f);
+            }
         }
     }
 

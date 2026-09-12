@@ -4,6 +4,38 @@ Status: authoritative for new art production, 2026-09-12.
 Supersedes production instructions in TECHART-01, ART-02, ART-04, ART-10.
 Complements `current-runtime-visual-contract.md` (which describes runtime rules).
 
+## Style anchor
+
+The single canonical visual target is `style-anchor/style-anchor-v1.png`
+(1600×900 reference frame). Every new asset must feel consistent with that
+image — same warmth, same character silhouette weight, same environmental
+density, same signage-carrying "cozy park" tone.
+
+If a prompt output does not read as belonging in that reference, reject it and
+re-prompt with a stronger `STYLE_ANCHOR` block or add a specific detail from
+this list:
+
+- **Perspective**: top-down 3/4, characters face camera with feet slightly
+  angled forward, shadows cast down-and-right.
+- **Outlines**: characters carry a chunky near-black outline; props carry a
+  lighter warm-brown outline; ground and foliage carry no outline.
+- **Environment density**: grass tufts, small flowers, pebbles and stone
+  edging populate every empty patch. Never leave a bare green field.
+- **Signage voice**: hand-lettered on wood or chalkboard, short and warm.
+  Examples in the reference: "Smaller Sips Brighter Days ♥", "GOOD PEOPLE
+  BRIGHTER DAYS", signpost "RIVER → / PARK ♥ / KINDER PEOPLE".
+- **UX cues in the world**: dashed circle rings on the ground mark queue
+  positions; use them wherever the player needs to see where guests stand.
+- **Ambient life**: at least one small living thing per scene beyond the
+  customers (bird on the bench, duck on the pond, butterfly).
+- **Water**: warm dark teal, with lily pads carrying tiny pink flower dots and
+  cattail reeds along the edge.
+- **Cobble transitions**: the dirt path is bordered by irregular gray cobble
+  stones where it meets grass; do not use a hard straight line.
+- **Awning**: yellow-and-cream striped with clear ZEST wordmark; a small leaf
+  and lemon icon flanks the wordmark.
+
+
 ## 0. Purpose and audience
 
 This document is written to be consumed by an image-generation model or by a
@@ -232,6 +264,27 @@ Each entry uses the template above with the class-specific brief in section 6.
 6. **Second background variation for evening**
    - `bg_riverside_evening_640x360_v01.png`, class 6.1, warmer horizon,
      longer shadows toward top-right.
+
+7. **Ambient life sprites** (reference: duck on pond, bird on bench)
+   - `prop_park_duck_idle_v01.png` — 24×20 native, WORLD_WOOD beak, CREAM body,
+     small AMBER tail highlight.
+   - `prop_park_songbird_idle_v01.png` — 12×12 native, RUST breast, INK head.
+
+8. **Signage set** (reference: chalkboards, banners, wooden signpost)
+   - `sign_chalkboard_editorial_v01.png` — 48×40 native, INK slate, CREAM
+     lettering, hand-lettered feel.
+   - `sign_banner_editorial_v01.png` — 32×60 native, CREAM/ZEST_YELLOW banner
+     hanging vertically, WORLD_WOOD frame.
+   - `sign_signpost_v01.png` — 24×48 native, three horizontal wooden slats on a
+     post, RUST arrows.
+
+9. **Cobble path edging tile** — 16×8 native, irregular stones for path→grass
+   transitions. Not required for MVP but strongly recommended for parity with
+   the reference.
+
+10. **Water elements** — `prop_water_lily_v01.png` 12×10 native, LEAF pad with
+    tiny pink flower centre. `prop_water_cattail_v01.png` 8×24 native, DEEP_LEAF
+    stem with WORLD_WOOD head.
 
 For each requested asset produce a small contact sheet (four variants: at 100 %,
 50 %, 25 % and at the exact runtime footprint from section 6) so approval can be
