@@ -10,6 +10,12 @@ public static class UpgradeIds
     public const string BiggerCooler = "bigger-cooler";
 }
 
+public static class MenuIds
+{
+    /// <summary>Berry Lemonade is offered as a Day 1 unlock decision rather than a purchase.</summary>
+    public const string Berry = "menu-berry";
+}
+
 /// <summary>Owns the first persistent player investment and its financial fact.</summary>
 public sealed class ProgressionService
 {
@@ -27,6 +33,14 @@ public sealed class ProgressionService
 
     public bool PurchaseBiggerCooler()
         => Purchase(UpgradeIds.BiggerCooler, BiggerCoolerCostMinor);
+
+    /// <summary>Free menu decision; added to Unlocks so LiveDayRunner exposes berry to customers.</summary>
+    public bool AddBerryToMenu()
+    {
+        if (_state.DayCycle.Phase != DayPhase.Report && _state.DayCycle.Phase != DayPhase.MorningBrief)
+            throw new InvalidOperationException("Menu changes are made between days.");
+        return _state.Progression.Unlock(MenuIds.Berry);
+    }
 
     private bool Purchase(string upgradeId, long costMinor)
     {

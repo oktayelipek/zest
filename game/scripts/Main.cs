@@ -75,6 +75,7 @@ public partial class Main : Control
     private readonly Dictionary<string, int> _regularVisits = new(StringComparer.Ordinal);
     private readonly Dictionary<Guid, string> _customerRegularName = [];
     private readonly HashSet<string> _greetedThisDay = new(StringComparer.Ordinal);
+    private HashSet<string> _unlocksAtDayStart = new(StringComparer.Ordinal);
 
     public override void _Ready()
     {
@@ -196,6 +197,14 @@ public partial class Main : Control
         _page.AddChild(LabelText("A fresh day in the park", ZestStyle.Type.Display, Ink));
         _page.AddChild(LabelText("Plan simply. Watch closely. Learn from what the day gives back.", ZestStyle.Type.Body, ZestStyle.Palette.MutedInk));
 
+        if (_state.DayIndex == 0 && _state.Business.Ledger.Count == 0)
+        {
+            _page.AddChild(Card("NEW HERE?",
+                "1  ·  Set the Classic price and opening batch, then open the stand.\n" +
+                "2  ·  Guests appear one by one — the badge above each shows what they want.\n" +
+                "3  ·  When the day closes, read the report. It tells you what to change tomorrow."));
+        }
+
         HBoxContainer columns = new();
         columns.AddThemeConstantOverride("separation", ZestStyle.Space.Lg);
         _page.AddChild(columns);
@@ -292,11 +301,27 @@ public partial class Main : Control
 
     private void StartDay()
     {
+        HashSet<string> beforeStart = _unlocksAtDayStart;
         _commands.Execute(new PlanDayCommand((long)Math.Round(_price.Value * 100), (int)_batch.Value));
         _commands.Execute(new StartLiveCommand());
         _sounds.Play();
         ShowLive();
+        string[] newlyInstalled = _state.Progression.Unlocks.Where(id => !beforeStart.Contains(id)).ToArray();
+        if (newlyInstalled.Length > 0)
+        {
+            string label = string.Join(" · ", newlyInstalled.Select(UpgradeDisplayName));
+            ShowToast($"Installed: {label}");
+        }
+        _unlocksAtDayStart = _state.Progression.Unlocks.ToHashSet(StringComparer.Ordinal);
     }
+
+    private static string UpgradeDisplayName(string id) => id switch
+    {
+        UpgradeIds.BetterCounter => "Better Counter (−10s prep)",
+        UpgradeIds.ElectricJuicer => "Electric Juicer (−10s all drinks)",
+        UpgradeIds.BiggerCooler => "Bigger Cooler (2× freshness)",
+        _ => id,
+    };
 
     private string SavePath => Path.Combine(ProjectSettings.GlobalizePath("user://"), "zest-day-boundary.json");
     private string PreferencesPath => Path.Combine(ProjectSettings.GlobalizePath("user://"), "zest-preferences.json");
@@ -641,11 +666,18 @@ public partial class Main : Control
         string classicCue = disabled ? "PAUSED" : classic == 0 ? "SOLD OUT" : "FRESH";
         Color classicCueColor = (disabled || classic == 0) ? Rust : Leaf;
         _contextBody.AddChild(ProductRow(HudGlyph.Lemon, $"CLASSIC · {Money(_runner.CurrentPrice("classic"))}", $"{classic} LEFT", classicCue, classicCueColor));
-        int berry = _runner.SellableServings("berry");
-        bool berryDisabled = IsProductDisabled("berry");
-        string berryCue = berryDisabled ? "PAUSED" : berry == 0 ? "SOLD OUT" : "FRESH";
-        Color berryCueColor = (berryDisabled || berry == 0) ? Rust : Leaf;
-        _contextBody.AddChild(ProductRow(HudGlyph.Berry, $"BERRY · {Money(_runner.CurrentPrice("berry"))}", $"{berry} LEFT", berryCue, berryCueColor));
+        if (_state.Progression.Has(MenuIds.Berry))
+        {
+            int berry = _runner.SellableServings("berry");
+            bool berryDisabled = IsProductDisabled("berry");
+            string berryCue = berryDisabled ? "PAUSED" : berry == 0 ? "SOLD OUT" : "FRESH";
+            Color berryCueColor = (berryDisabled || berry == 0) ? Rust : Leaf;
+            _contextBody.AddChild(ProductRow(HudGlyph.Berry, $"BERRY · {Money(_runner.CurrentPrice("berry"))}", $"{berry} LEFT", berryCue, berryCueColor));
+        }
+        else
+        {
+            _contextBody.AddChild(LabelText("BERRY  ·  NOT YET ON MENU", ZestStyle.Type.Label, ZestStyle.Palette.MutedInk));
+        }
         _contextBody.AddChild(LabelText("KEEP THE COUNTER READY. CHANGE THE PRICE ONLY WHEN DEMAND TELLS YOU TO.", ZestStyle.Type.Label, ZestStyle.Palette.MutedInk));
         HBoxContainer actions = new();
         actions.AddThemeConstantOverride("separation", 8);
@@ -1053,6 +1085,20 @@ public partial class Main : Control
         Button nextDay = ActionButton("Start next day  →", Citrus, Ink);
         nextDay.Pressed += StartNextDay;
         _page.AddChild(nextDay);
+        if (!_state.Progression.Has(MenuIds.Berry))
+        {
+            VBoxContainer unlockCard = Card("NEW RECIPE  ·  BERRY LEMONADE",
+                "A slightly premium variant. Higher price, higher taste weight for some segments — but it eats one more lemon per serving. Try it tomorrow?");
+            Button addBerry = CompactButton("Add Berry to menu", Leaf, Cream);
+            addBerry.Pressed += () =>
+            {
+                _commands.Execute(new AddBerryToMenuCommand());
+                ShowToast("Berry Lemonade added to tomorrow's menu.");
+                ShowReport(_commands.Snapshot().Report!);
+            };
+            unlockCard.AddChild(addBerry);
+            _page.AddChild(unlockCard);
+        }
         _page.AddChild(UpgradeButton(UpgradeIds.BetterCounter, "Better counter", "$5.00", ProgressionService.BetterCounterCostMinor,
             new PurchaseBetterCounterCommand(), "Classic preparation takes 10 seconds less."));
         _page.AddChild(UpgradeButton(UpgradeIds.ElectricJuicer, "Electric juicer", "$8.00", ProgressionService.ElectricJuicerCostMinor,

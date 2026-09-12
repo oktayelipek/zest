@@ -18,6 +18,7 @@ public sealed class ConfiguredLiveSessionTests
         GameState state = ConfigGameStateFactory.CreateEmpty(8675309, config);
         LiveDayRunner runner = ConfigLiveSessionFactory.Create(state, config, new DateOnly(2026, 9, 10));
         DayCommandProcessor commands = new(state, runner);
+        commands.Execute(new AddBerryToMenuCommand());
 
         commands.Execute(new PlanDayCommand(350, 2));
         commands.Execute(new StartLiveCommand());
@@ -225,12 +226,30 @@ public sealed class ConfiguredLiveSessionTests
     }
 
     [Fact]
+    public void Berry_stays_off_menu_until_unlocked()
+    {
+        ContentConfig config = new ConfigLoader().Load(ConfigRoot());
+        GameState state = ConfigGameStateFactory.CreateEmpty(8675309, config);
+        LiveDayRunner runner = ConfigLiveSessionFactory.Create(state, config, new DateOnly(2026, 9, 10));
+        DayCommandProcessor commands = new(state, runner);
+        commands.Execute(new PlanDayCommand(350, 12));
+        commands.Execute(new StartLiveCommand());
+        commands.Execute(new AdvanceLiveCommand(10 * 60 * 60));
+        commands.Execute(new CloseDayCommand());
+
+        Assert.DoesNotContain(state.Operations.Orders.Values,
+            o => o.RecipeVersionId.RecipeId == "berry");
+        Assert.Contains(state.Business.Ledger, e => e.Type == LedgerEntryType.Sale);
+    }
+
+    [Fact]
     public void A_default_day_produces_both_products_and_lost_customers_for_ui_juice()
     {
         ContentConfig config = new ConfigLoader().Load(ConfigRoot());
         GameState state = ConfigGameStateFactory.CreateEmpty(8675309, config);
         LiveDayRunner runner = ConfigLiveSessionFactory.Create(state, config, new DateOnly(2026, 9, 10));
         DayCommandProcessor commands = new(state, runner);
+        commands.Execute(new AddBerryToMenuCommand());
         commands.Execute(new PlanDayCommand(350, 12));
         commands.Execute(new StartLiveCommand());
         commands.Execute(new AdvanceLiveCommand(10 * 60 * 60));

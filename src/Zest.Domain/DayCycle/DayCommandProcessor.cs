@@ -44,6 +44,9 @@ public sealed class DayCommandProcessor
             case PurchaseBiggerCoolerCommand:
                 new ProgressionService(_state).PurchaseBiggerCooler();
                 break;
+            case AddBerryToMenuCommand:
+                new ProgressionService(_state).AddBerryToMenu();
+                break;
             case ActivateRushMenuCommand rush:
                 new LiveInterventionService(_state).ActivateRushMenu(rush.ProductIds);
                 break;

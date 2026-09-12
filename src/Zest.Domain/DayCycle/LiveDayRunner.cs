@@ -123,7 +123,7 @@ public sealed class LiveDayRunner
 
     private void TryAccept(PasserbyOpportunity opportunity, long acceptedAt)
     {
-        CustomerGenerationProfile priced = ApplyReputation(new LiveInterventionService(_state).ApplyCurrentPrices(_customers));
+        CustomerGenerationProfile priced = FilterToActiveMenu(ApplyReputation(new LiveInterventionService(_state).ApplyCurrentPrices(_customers)));
         CustomerInteraction interaction = _customerGenerator.Generate(_state, opportunity, priced);
         if (interaction.Decision != CustomerDecision.Purchased || interaction.RecipeId is null) return;
         // A delivered/prepared batch extends Classic beyond the opening plan; raw stock alone does not.
@@ -187,6 +187,15 @@ public sealed class LiveDayRunner
 
     private RecipeVersion RecipeFor(string productId) => _recipes.Versions.Values
         .Single(recipe => recipe.Id.RecipeId == productId);
+
+    private CustomerGenerationProfile FilterToActiveMenu(CustomerGenerationProfile profile)
+    {
+        // Classic is always on-menu. Optional recipes require an explicit unlock decision.
+        Dictionary<string, ProductChoiceProfile> allowed = profile.Products
+            .Where(pair => pair.Key == "classic" || (pair.Key == "berry" && _state.Progression.Has(MenuIds.Berry)))
+            .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+        return allowed.Count == profile.Products.Count ? profile : profile with { Products = allowed };
+    }
 
     private CustomerGenerationProfile ApplyReputation(CustomerGenerationProfile profile)
     {
