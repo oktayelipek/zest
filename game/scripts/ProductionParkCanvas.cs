@@ -72,10 +72,10 @@ public partial class ProductionParkCanvas : Node2D
         AddAnimatedProp("LampSign", FinalGridRoot + "prop_lamp_sign_idle_v02.png", new(-132, 24), 1, 0);
         AddAnimatedProp("FlowerPlanter", FinalGridRoot + "prop_flower_planter_idle_v02.png", new(142, 35), 1, 0);
         AddAnimatedProp("WindBush", FinalGridRoot + "prop_bush_wind_4x1_v02.png", new(208, -16), 4, 3.5);
-        TryAddOptionalProp("EditorialChalkboard", "sign_chalkboard_editorial_v01.png", new(-92, 14));
-        TryAddOptionalProp("TrailSignpost", "sign_signpost_v01.png", new(290, 108));
+        AddAnimatedProp("EditorialChalkboard", FinalGridRoot + "sign_chalkboard_editorial_4x1_v01.png", new(-92, 14), 4, 3, false);
+        AddAnimatedProp("TrailSignpost", FinalGridRoot + "sign_signpost_4x1_v01.png", new(290, 108), 4, 3, false);
         TryAddOptionalProp("StandMenuBoard", "sign_stand_menu_v01.png", new(72, -6));
-        TryAddOptionalProp("EditorialBanner", "sign_banner_editorial_v01.png", new(-132, -8));
+        AddAnimatedProp("EditorialBanner", FinalGridRoot + "sign_banner_editorial_4x1_v01.png", new(-132, -8), 4, 3, false);
         AddAnimatedProp("BenchSongbird", FinalGridRoot + "prop_park_songbird_idle_6x1_v01.png", new(-194, 30), 6, 6, false);
         AddAnimatedProp("PondWaterLily", FinalGridRoot + "prop_water_lily_idle_6x1_v01.png", new(180, -110), 6, 5, false);
         AddAnimatedProp("PondDuck", FinalGridRoot + "prop_park_duck_idle_4x1_v01.png", new(212, -144), 4, 5, false);
@@ -192,8 +192,8 @@ public partial class ZestStandVisual : Node2D
     private PixelWorldText _plaqueLabel = null!;
     private PreparedBatchCue _batchCue = null!;
     private Sprite2D? _weatherOverlay;
-    private Sprite2D? _vendorRainOverlay;
-    private Sprite2D? _strongMenuFlag;
+    private AnimatedSprite2D? _vendorRainOverlay;
+    private AnimatedSprite2D? _strongMenuFlag;
     private ProceduralAwning? _proceduralAwning;
     private ProceduralRainHat? _proceduralHat;
     private ProceduralStrongFlag? _proceduralFlag;
@@ -305,7 +305,7 @@ public partial class ZestStandVisual : Node2D
     /// <summary>Vendor rain-hat cue: PNG if present, otherwise a procedural little hat over the vendor head.</summary>
     public void SetVendorRainOverlay(bool active)
     {
-        string path = WeatherOverlayRoot + "vendor-rain-hat.png";
+        string path = WeatherOverlayRoot + "vendor-rain-hat-4x1_v01.png";
         bool wantsPng = active && ResourceLoader.Exists(path);
         if (!active)
         {
@@ -318,21 +318,10 @@ public partial class ZestStandVisual : Node2D
             if (_proceduralHat is not null) _proceduralHat.Visible = false;
             if (_vendorRainOverlay is null)
             {
-                _vendorRainOverlay = new Sprite2D
-                {
-                    Name = "VendorRainOverlay",
-                    Centered = true,
-                    Position = new Vector2(0, -46),
-                    TextureFilter = TextureFilterEnum.Nearest,
-                    ZIndex = 4,
-                };
+                _vendorRainOverlay = CreateLoopingOverlay("VendorRainOverlay", path, new(0, -46), 4, 6, 22f, 4);
                 AddChild(_vendorRainOverlay);
             }
-            Texture2D hatTex = ResourceLoader.Load<Texture2D>(path);
-            _vendorRainOverlay.Texture = hatTex;
-            _vendorRainOverlay.Scale = hatTex.GetWidth() > 100
-                ? Vector2.One * (22f / hatTex.GetWidth())
-                : Vector2.One;
+            _vendorRainOverlay.Play("idle");
             _vendorRainOverlay.Visible = true;
         }
         else
@@ -350,7 +339,7 @@ public partial class ZestStandVisual : Node2D
     /// <summary>Strong menu cue: PNG if present, otherwise a procedural pennant flag.</summary>
     public void SetStrongMenuFlag(bool active)
     {
-        string path = StandOverlayRoot + "strong-menu-flag.png";
+        string path = StandOverlayRoot + "strong-menu-flag-4x1_v01.png";
         bool wantsPng = active && ResourceLoader.Exists(path);
         if (!active)
         {
@@ -363,21 +352,10 @@ public partial class ZestStandVisual : Node2D
             if (_proceduralFlag is not null) _proceduralFlag.Visible = false;
             if (_strongMenuFlag is null)
             {
-                _strongMenuFlag = new Sprite2D
-                {
-                    Name = "StrongMenuFlag",
-                    Centered = true,
-                    Position = new Vector2(-58, -92),
-                    TextureFilter = TextureFilterEnum.Nearest,
-                    ZIndex = 5,
-                };
+                _strongMenuFlag = CreateLoopingOverlay("StrongMenuFlag", path, new(-58, -92), 4, 5, 28f, 5);
                 AddChild(_strongMenuFlag);
             }
-            Texture2D flagTex = ResourceLoader.Load<Texture2D>(path);
-            _strongMenuFlag.Texture = flagTex;
-            _strongMenuFlag.Scale = flagTex.GetWidth() > 40
-                ? Vector2.One * (28f / flagTex.GetWidth())
-                : Vector2.One;
+            _strongMenuFlag.Play("idle");
             _strongMenuFlag.Visible = true;
         }
         else
@@ -390,6 +368,35 @@ public partial class ZestStandVisual : Node2D
             }
             _proceduralFlag.Visible = true;
         }
+    }
+
+    private static AnimatedSprite2D CreateLoopingOverlay(string name, string path, Vector2 position, int columns, double fps, float targetWidth, int zIndex)
+    {
+        Texture2D texture = ResourceLoader.Load<Texture2D>(path);
+        int frameWidth = texture.GetWidth() / columns;
+        SpriteFrames frames = new();
+        frames.AddAnimation("idle");
+        frames.SetAnimationLoopMode("idle", SpriteFrames.LoopMode.Linear);
+        frames.SetAnimationSpeed("idle", fps);
+        for (int column = 0; column < columns; column++)
+        {
+            frames.AddFrame("idle", new AtlasTexture
+            {
+                Atlas = texture,
+                Region = new Rect2(column * frameWidth, 0, frameWidth, texture.GetHeight()),
+            });
+        }
+        return new AnimatedSprite2D
+        {
+            Name = name,
+            SpriteFrames = frames,
+            Animation = "idle",
+            Centered = true,
+            Position = position,
+            Scale = Vector2.One * (targetWidth / frameWidth),
+            TextureFilter = TextureFilterEnum.Nearest,
+            ZIndex = zIndex,
+        };
     }
 
     public void SetPresentation(StandUpgradeVisual upgrade, StandOperatingVisual operatingState, int preparedBatchCount)
@@ -567,6 +574,7 @@ public partial class HdCustomerActor : Node2D
     private Texture2D _south = null!;
     private Texture2D _southWalkA = null!;
     private Texture2D _southWalkB = null!;
+    private Texture2D _northIdle = null!;
     private Texture2D _north = null!;
     private Texture2D _northWalkB = null!;
     private Texture2D _west = null!;
@@ -606,6 +614,10 @@ public partial class HdCustomerActor : Node2D
         _south = ResourceLoader.Load<Texture2D>(root + "customer-south-idle.png");
         _southWalkA = ResourceLoader.Load<Texture2D>(root + "customer-south-walk-a.png");
         _southWalkB = ResourceLoader.Load<Texture2D>(root + "customer-south-walk-b.png");
+        string northIdlePath = root + "customer-north-idle.png";
+        _northIdle = ResourceLoader.Exists(northIdlePath)
+            ? ResourceLoader.Load<Texture2D>(northIdlePath)
+            : ResourceLoader.Load<Texture2D>(root + "customer-north-walk-a.png");
         _north = ResourceLoader.Load<Texture2D>(root + "customer-north-walk-a.png");
         _northWalkB = ResourceLoader.Load<Texture2D>(root + "customer-north-walk-b.png");
         _west = ResourceLoader.Load<Texture2D>(root + "customer-west-walk-a.png");
@@ -641,7 +653,9 @@ public partial class HdCustomerActor : Node2D
         };
         AddChild(shadow);
         AddChild(_sprite);
-        SetProcess(walksRoute);
+        // Every customer pose remains alive: queue actors get a subtle idle loop,
+        // while route actors additionally animate their walk cycle below.
+        SetProcess(true);
     }
 
     private PixelWorldText? _nameTag;
@@ -717,8 +731,14 @@ public partial class HdCustomerActor : Node2D
 
     public override void _Process(double delta)
     {
-        if (_reducedMotion && _walksRoute) return;
+        if (_reducedMotion)
+        {
+            if (_walksRoute) return;
+            _sprite.Position = new Vector2(0, -CanvasHeight * RuntimeScale / 2f);
+            return;
+        }
         delta *= _simulationSpeed;
+        _animationTime += delta;
         if (_leaving)
         {
             _leaveTimer -= delta;
@@ -726,7 +746,11 @@ public partial class HdCustomerActor : Node2D
             return;
         }
         _turnTimer = Math.Max(0, _turnTimer - delta);
-        if (!_walksRoute) return;
+        if (!_walksRoute)
+        {
+            ApplyIdleMotion();
+            return;
+        }
         if (_queuePause > 0)
         {
             _queuePause -= delta;
@@ -750,7 +774,6 @@ public partial class HdCustomerActor : Node2D
         int row = Mathf.Abs(direction.X) > Mathf.Abs(direction.Y)
             ? direction.X < 0 ? 1 : 2
             : direction.Y < 0 ? 3 : 0;
-        _animationTime += delta;
         if (row != _lastDirectionRow)
         {
             _turnTexture = _lastDirectionRow == 0 && (row == 1 || row == 2)
@@ -776,13 +799,20 @@ public partial class HdCustomerActor : Node2D
         }
         _sprite.Texture = row switch
         {
-            3 => alternate ? _northWalkB : _north,
+            3 => walking ? alternate ? _northWalkB : _north : _northIdle,
             1 or 2 => alternate ? _westWalkB : _west,
             _ => alternate ? _southWalkB : _south,
         };
         _sprite.FlipH = row == 2;
         float bob = walking && (int)(_animationTime * 8) % 4 is 1 or 2 ? -1 : 0;
         _sprite.Position = new Vector2(0, -CanvasHeight * RuntimeScale / 2f + bob);
+    }
+
+    private void ApplyIdleMotion()
+    {
+        float baseY = -CanvasHeight * RuntimeScale / 2f;
+        float bob = Mathf.Sin((float)_animationTime * (_servicePose ? 3.4f : 2.15f)) * .45f;
+        _sprite.Position = new Vector2(0, baseY + bob);
     }
 }
 
