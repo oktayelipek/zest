@@ -380,7 +380,7 @@ public partial class HdCustomerActor : Node2D
     private const float RuntimeScale = .035f;
     private const float CanvasHeight = 1400;
 
-    public void Configure(bool walksRoute, int idleVariant, Guid customerId)
+    public void Configure(bool walksRoute, int idleVariant, Guid customerId, int routeStartIndex = 0)
     {
         _south = ResourceLoader.Load<Texture2D>(ProductionParkCanvas.CustomerAssetRoot + "customer-south-idle.png");
         _southWalkA = ResourceLoader.Load<Texture2D>(ProductionParkCanvas.CustomerAssetRoot + "customer-south-walk-a.png");
@@ -395,7 +395,9 @@ public partial class HdCustomerActor : Node2D
         _westSouthTurn = ResourceLoader.Load<Texture2D>(ProductionParkCanvas.CustomerAssetRoot + "customer-west-south-turn.png");
         _walksRoute = walksRoute;
         CustomerId = customerId;
-        Position = walksRoute ? Route[0] : Position;
+        int startIndex = ((routeStartIndex % Route.Length) + Route.Length) % Route.Length;
+        Position = walksRoute ? Route[startIndex] : Position;
+        _routeIndex = walksRoute ? (startIndex + 1) % Route.Length : 1;
         _precisePosition = Position;
         _sprite = new Sprite2D
         {
@@ -417,6 +419,47 @@ public partial class HdCustomerActor : Node2D
         AddChild(shadow);
         AddChild(_sprite);
         SetProcess(walksRoute);
+    }
+
+    private PixelWorldText? _nameTag;
+    private PixelWorldText? _orderBadge;
+
+    public void SetOrderBadge(string? label, Color? textColor = null, Color? background = null)
+    {
+        if (string.IsNullOrEmpty(label))
+        {
+            _orderBadge?.QueueFree();
+            _orderBadge = null;
+            return;
+        }
+        Color text = textColor ?? ZestStyle.Palette.Charcoal;
+        Color bg = background ?? new Color(ZestStyle.Palette.ZestYellow, .82f);
+        if (_orderBadge is null)
+        {
+            _orderBadge = new PixelWorldText { Name = "OrderBadge", Position = new Vector2(14, -44), ZIndex = 21 };
+            AddChild(_orderBadge);
+        }
+        _orderBadge.Configure(label, text, centered: true, background: bg);
+    }
+
+    public void SetNameTag(string? label)
+    {
+        if (string.IsNullOrEmpty(label))
+        {
+            _nameTag?.QueueFree();
+            _nameTag = null;
+            return;
+        }
+        if (_nameTag is null)
+        {
+            _nameTag = new PixelWorldText { Name = "NameTag", Position = new Vector2(0, -54), ZIndex = 20 };
+            _nameTag.Configure(label, ZestStyle.Palette.Cream, centered: true, background: new Color(ZestStyle.Palette.Charcoal, .82f));
+            AddChild(_nameTag);
+        }
+        else
+        {
+            _nameTag.SetText(label);
+        }
     }
 
     public void SetSimulationSpeed(float speed) => _simulationSpeed = Mathf.Max(0, speed);

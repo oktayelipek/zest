@@ -224,5 +224,32 @@ public sealed class ConfiguredLiveSessionTests
         finally { if (File.Exists(path)) File.Delete(path); }
     }
 
+    [Fact]
+    public void A_default_day_produces_both_products_and_lost_customers_for_ui_juice()
+    {
+        ContentConfig config = new ConfigLoader().Load(ConfigRoot());
+        GameState state = ConfigGameStateFactory.CreateEmpty(8675309, config);
+        LiveDayRunner runner = ConfigLiveSessionFactory.Create(state, config, new DateOnly(2026, 9, 10));
+        DayCommandProcessor commands = new(state, runner);
+        commands.Execute(new PlanDayCommand(350, 12));
+        commands.Execute(new StartLiveCommand());
+        commands.Execute(new AdvanceLiveCommand(10 * 60 * 60));
+        commands.Execute(new CloseDayCommand());
+
+        var sales = state.Business.Ledger.Where(e => e.Type == LedgerEntryType.Sale).ToArray();
+        Assert.NotEmpty(sales);
+        Assert.Contains(state.Operations.Orders.Values,
+            o => o.Status == OrderStatus.Served && o.RecipeVersionId.RecipeId == "classic");
+        Assert.Contains(state.Operations.Orders.Values,
+            o => o.Status == OrderStatus.Served && o.RecipeVersionId.RecipeId == "berry");
+        Assert.NotEmpty(state.Operations.LossEvents);
+        Assert.Contains(state.Operations.LossEvents,
+            l => l.Reason is LostSaleReason.OutsideOption
+                        or LostSaleReason.PriceTooHigh
+                        or LostSaleReason.PoorProductFit
+                        or LostSaleReason.QueueAbandonment
+                        or LostSaleReason.ClosingTime);
+    }
+
     private static string ConfigRoot() => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "config"));
 }

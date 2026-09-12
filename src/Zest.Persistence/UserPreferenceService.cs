@@ -22,7 +22,8 @@ public sealed class UserPreferenceService
             return UserPreferences.Default;
         }
         if (stored is null || stored.Version > CurrentVersion) return UserPreferences.Default;
-        return stored with { Version = CurrentVersion, TextScale = NormalizeTextScale(stored.TextScale) };
+        int level = !stored.SoundEnabled ? 0 : Math.Clamp(stored.SoundLevel, 0, 2);
+        return stored with { Version = CurrentVersion, TextScale = NormalizeTextScale(stored.TextScale), SoundLevel = level, SoundEnabled = level > 0 };
     }
 
     public void Save(string path, UserPreferences preferences)
@@ -38,7 +39,7 @@ public sealed class UserPreferenceService
     private static float NormalizeTextScale(float value) => float.IsFinite(value) ? Math.Clamp(value, 1f, 1.35f) : 1f;
 }
 
-public sealed record UserPreferences(int Version, float TextScale, bool ReducedMotion, bool SoundEnabled = true)
+public sealed record UserPreferences(int Version, float TextScale, bool ReducedMotion, bool SoundEnabled = true, int SoundLevel = 2)
 {
     public static UserPreferences Default { get; } = new(1, 1f, false);
 }

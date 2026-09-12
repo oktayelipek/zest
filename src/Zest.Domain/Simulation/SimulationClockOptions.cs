@@ -4,8 +4,9 @@ public sealed record SimulationClockOptions
 {
     public static SimulationClockOptions Default { get; } = new();
 
-    /// <summary>Duration represented by one authoritative simulation step.</summary>
-    public TimeSpan FixedStep { get; init; } = TimeSpan.FromMilliseconds(100);
+    /// <summary>Duration represented by one authoritative simulation step.
+    /// At 1× a 10-hour business day (36 000 SimTime units) takes ~6 real minutes.</summary>
+    public TimeSpan FixedStep { get; init; } = TimeSpan.FromMilliseconds(10);
 
     /// <summary>Number of fixed simulation steps in one game day.</summary>
     public long StepsPerDay { get; init; } = 86_400;

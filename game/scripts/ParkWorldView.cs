@@ -17,10 +17,14 @@ public partial class ParkWorldView : SubViewportContainer
     private Camera2D _camera = null!;
     private ProductionParkCanvas _park = null!;
     private Node2D _queueRoot = null!;
-    private HdCustomerActor _routeGuest = null!;
+    private readonly List<HdCustomerActor> _ambientWalkers = [];
     private Line2D _focusMarker = null!;
     private PixelWorldText _stockBoard = null!;
     private PixelWorldText _queueBoard = null!;
+    private ColorRect _weatherTint = null!;
+    private RainOverlay _rain = null!;
+    private ReputationStars _stars = null!;
+    private string? _lastWeatherId;
     private Vector2 _target;
     private CameraFraming _framing = CameraFraming.Business;
     private int _requestedQueueLength;
@@ -160,14 +164,14 @@ public partial class ParkWorldView : SubViewportContainer
     {
         _simulationSpeed = Mathf.Max(0, speed);
         foreach (HdCustomerActor actor in _queuePeople) actor.SetSimulationSpeed(_simulationSpeed);
-        _routeGuest?.SetSimulationSpeed(_simulationSpeed);
+        foreach (HdCustomerActor walker in _ambientWalkers) walker.SetSimulationSpeed(_simulationSpeed);
     }
 
     public void SetReducedMotion(bool enabled)
     {
         _reducedMotion = enabled;
         foreach (HdCustomerActor actor in _queuePeople) actor.SetReducedMotion(enabled);
-        _routeGuest?.SetReducedMotion(enabled);
+        foreach (HdCustomerActor walker in _ambientWalkers) walker.SetReducedMotion(enabled);
     }
 
     public void SetProductStatus(int quantity, bool disabled, bool rushMenu = false, int preparedBatchCount = 0, StandUpgradeVisual? upgrade = null)
@@ -192,6 +196,40 @@ public partial class ParkWorldView : SubViewportContainer
     {
         if (_queuePeople.Count == 0) return;
         _queuePeople[0].PlayLeavePose();
+    }
+
+    public void SetWeather(string? weatherId)
+    {
+        if (_weatherTint is null || _lastWeatherId == weatherId) return;
+        _lastWeatherId = weatherId;
+        Color tint = weatherId switch
+        {
+            "rain" => new Color(0.32f, 0.42f, 0.58f, 0.28f),
+            "cloudy" => new Color(0.55f, 0.58f, 0.62f, 0.18f),
+            "sunny" => new Color(1.0f, 0.85f, 0.55f, 0.10f),
+            _ => new Color(0, 0, 0, 0),
+        };
+        Tween tween = _weatherTint.CreateTween();
+        tween.TweenProperty(_weatherTint, "color", tint, 0.6);
+        if (_rain is not null) _rain.SetActive(weatherId == "rain");
+    }
+
+    public void SetReputation(int reputation)
+    {
+        int stars = reputation >= 80 ? 3 : reputation >= 60 ? 2 : reputation >= 35 ? 1 : 0;
+        _stars?.SetStarCount(stars);
+    }
+
+    public void SetCustomerNameTag(Guid customerId, string? label)
+    {
+        if (_queuePeopleById.TryGetValue(customerId, out HdCustomerActor? actor))
+            actor.SetNameTag(label);
+    }
+
+    public void SetCustomerOrderBadge(Guid customerId, string? label, Color? textColor = null, Color? background = null)
+    {
+        if (_queuePeopleById.TryGetValue(customerId, out HdCustomerActor? actor))
+            actor.SetOrderBadge(label, textColor, background);
     }
 
     public bool TrackQueueCustomer(int index)
@@ -229,6 +267,9 @@ public partial class ParkWorldView : SubViewportContainer
         _stockBoard.Configure("CLASSIC 12", ZestStyle.Palette.Cream, centered: true, background: new Color(ZestStyle.Palette.Charcoal, .88f));
         stand.AddChild(_stockBoard);
 
+        _stars = new ReputationStars { Name = "ReputationStars", Position = new Vector2(104, -68), ZIndex = 31 };
+        stand.AddChild(_stars);
+
         _queueBoard = new PixelWorldText { Name = "QueueBoard", Position = new Vector2(72, 18), ZIndex = 30 };
         _queueBoard.Configure("QUEUE 0", ZestStyle.Palette.Cream, centered: true, background: new Color(ZestStyle.Palette.Charcoal, .88f));
         _park.AddChild(_queueBoard);
@@ -245,12 +286,17 @@ public partial class ParkWorldView : SubViewportContainer
         };
         _park.AddChild(_focusMarker);
 
-        _routeGuest = new HdCustomerActor { Name = "PlayableRouteGuest" };
-        _routeGuest.Configure(walksRoute: true, 0, Guid.Empty);
-        _routeGuest.SetSimulationSpeed(_simulationSpeed);
-        _routeGuest.SetReducedMotion(_reducedMotion);
-        _routeGuest.ZIndex = 1;
-        _park.AddChild(_routeGuest);
+        int[] ambientStarts = [0, 3, 6, 9];
+        for (int i = 0; i < ambientStarts.Length; i++)
+        {
+            HdCustomerActor walker = new() { Name = $"AmbientWalker_{i}" };
+            walker.Configure(walksRoute: true, i, Guid.Empty, ambientStarts[i]);
+            walker.SetSimulationSpeed(_simulationSpeed);
+            walker.SetReducedMotion(_reducedMotion);
+            walker.ZIndex = 1;
+            _park.AddChild(walker);
+            _ambientWalkers.Add(walker);
+        }
 
         SetQueueLength(_requestedQueueLength);
 
@@ -261,6 +307,22 @@ public partial class ParkWorldView : SubViewportContainer
             Enabled = true,
         };
         _park.AddChild(_camera);
+
+        _weatherTint = new ColorRect
+        {
+            Name = "WeatherTint",
+            Color = new Color(0, 0, 0, 0),
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        };
+        _weatherTint.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        _viewport.AddChild(_weatherTint);
+
+        _rain = new RainOverlay
+        {
+            Name = "RainOverlay",
+            Size = (Vector2)_viewport.Size,
+        };
+        _viewport.AddChild(_rain);
     }
 
     private void SelectAt(Vector2 localPoint)
@@ -285,6 +347,114 @@ public partial class ParkWorldView : SubViewportContainer
             WorldSelectionRequested?.Invoke(new(WorldSelectionKind.Stand));
         else
             WorldSelectionRequested?.Invoke(new(WorldSelectionKind.None));
+    }
+
+    /// <summary>Cheap falling-droplet overlay. Only draws when active.</summary>
+    private partial class RainOverlay : Control
+    {
+        private const int DropCount = 28;
+        private readonly Vector2[] _positions = new Vector2[DropCount];
+        private readonly float[] _speeds = new float[DropCount];
+        private readonly Color _color = new(0.72f, 0.82f, 1f, 0.55f);
+        private bool _active;
+        private RandomNumberGenerator _rng = new();
+
+        public override void _Ready()
+        {
+            MouseFilter = MouseFilterEnum.Ignore;
+            _rng.Seed = 0xDEA1;
+            for (int i = 0; i < DropCount; i++) Respawn(i, initial: true);
+            SetProcess(false);
+            Visible = false;
+        }
+
+        public void SetActive(bool active)
+        {
+            if (_active == active) return;
+            _active = active;
+            Visible = active;
+            SetProcess(active);
+            if (active) QueueRedraw();
+        }
+
+        public override void _Process(double delta)
+        {
+            float dt = (float)delta;
+            float h = Size.Y > 0 ? Size.Y : 360;
+            for (int i = 0; i < DropCount; i++)
+            {
+                _positions[i].Y += _speeds[i] * dt;
+                if (_positions[i].Y > h) Respawn(i, initial: false);
+            }
+            QueueRedraw();
+        }
+
+        public override void _Draw()
+        {
+            if (!_active) return;
+            for (int i = 0; i < DropCount; i++)
+            {
+                Vector2 top = _positions[i];
+                Vector2 bot = top + new Vector2(-2, 8);
+                DrawLine(top, bot, _color, 1f);
+            }
+        }
+
+        private void Respawn(int i, bool initial)
+        {
+            float w = Size.X > 0 ? Size.X : 640;
+            float h = Size.Y > 0 ? Size.Y : 360;
+            float x = _rng.RandfRange(0, w);
+            float y = initial ? _rng.RandfRange(0, h) : _rng.RandfRange(-20, 0);
+            _positions[i] = new Vector2(x, y);
+            _speeds[i] = _rng.RandfRange(220, 340);
+        }
+    }
+
+    /// <summary>Three-slot pixel star row rendered next to the stockboard.</summary>
+    private partial class ReputationStars : Node2D
+    {
+        private int _count;
+        private static readonly Color Filled = ZestStyle.Palette.ZestYellow;
+        private static readonly Color Empty = new(1f, 1f, 1f, 0.18f);
+
+        public void SetStarCount(int count)
+        {
+            count = Math.Clamp(count, 0, 3);
+            if (_count == count) return;
+            _count = count;
+            QueueRedraw();
+        }
+
+        public override void _Draw()
+        {
+            const int spacing = 6;
+            float originX = -(3 * spacing) / 2f + spacing / 2f;
+            for (int i = 0; i < 3; i++)
+            {
+                Vector2 center = new(originX + i * spacing, 0);
+                DrawStar(center, i < _count ? Filled : Empty);
+            }
+        }
+
+        private void DrawStar(Vector2 c, Color color)
+        {
+            Vector2[] points =
+            [
+                c + new Vector2(0, -2),
+                c + new Vector2(2, 0),
+                c + new Vector2(0, 2),
+                c + new Vector2(-2, 0),
+            ];
+            DrawColoredPolygon(points, color);
+            DrawColoredPolygon(new Vector2[]
+            {
+                c + new Vector2(0, -3),
+                c + new Vector2(1, -1),
+                c + new Vector2(0, 0),
+                c + new Vector2(-1, -1),
+            }, color);
+        }
     }
 
     private void ApplyCamera()

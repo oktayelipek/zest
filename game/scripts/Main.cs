@@ -54,6 +54,8 @@ public partial class Main : Control
     private RichTextLabel _managementBody = null!;
     private Button _managementCloseButton = null!;
     private LiveDestination _managementReturnDestination = LiveDestination.None;
+    private LiveDestination _currentContext = LiveDestination.None;
+    private int _currentCustomerIndex;
     private Label _toast = null!;
     private ProgressBar _dayProgress = null!;
     private Label _speedLabel = null!;
@@ -66,6 +68,13 @@ public partial class Main : Control
     private bool _closeScheduled;
     private readonly HashSet<Guid> _observedDepartures = [];
     private double _refreshAccumulator;
+    private int _observedSaleLedgerCount;
+    private int _observedLossCount;
+    private Control _juiceLayer = null!;
+    private static readonly string[] RegularNames = ["MARCUS", "LENA", "OMAR", "PRIYA", "JUNE", "SAM"];
+    private readonly Dictionary<string, int> _regularVisits = new(StringComparer.Ordinal);
+    private readonly Dictionary<Guid, string> _customerRegularName = [];
+    private readonly HashSet<string> _greetedThisDay = new(StringComparer.Ordinal);
 
     public override void _Ready()
     {
@@ -231,8 +240,9 @@ public partial class Main : Control
         Button motion = CompactButton(_preferences.ReducedMotion ? "Motion: reduced" : "Motion: full", Paper, Ink);
         motion.Pressed += () => SetReducedMotion(!_preferences.ReducedMotion);
         accessibility.AddChild(motion);
-        Button sound = CompactButton(_preferences.SoundEnabled ? "Sound: on" : "Sound: off", Paper, Ink);
-        sound.Pressed += () => SetSoundEnabled(!_preferences.SoundEnabled);
+        string soundLabel = _preferences.SoundLevel switch { >= 2 => "Sound: full", 1 => "Sound: soft", _ => "Sound: off" };
+        Button sound = CompactButton(soundLabel, Paper, Ink);
+        sound.Pressed += () => CycleSoundLevel();
         accessibility.AddChild(sound);
     }
 
@@ -254,10 +264,20 @@ public partial class Main : Control
 
     private void SetSoundEnabled(bool enabled)
     {
-        _preferences = _preferences with { SoundEnabled = enabled };
+        _preferences = _preferences with { SoundEnabled = enabled, SoundLevel = enabled ? 2 : 0 };
         SavePreferences();
         ApplyPreferences();
         if (enabled) _sounds.Play();
+        ShowMorningBrief();
+    }
+
+    private void CycleSoundLevel()
+    {
+        int next = (_preferences.SoundLevel + 1) % 3;
+        _preferences = _preferences with { SoundLevel = next, SoundEnabled = next > 0 };
+        SavePreferences();
+        ApplyPreferences();
+        if (next > 0) _sounds.Play();
         ShowMorningBrief();
     }
 
@@ -266,7 +286,7 @@ public partial class Main : Control
     private void ApplyPreferences()
     {
         GetWindow().ContentScaleFactor = _preferences.TextScale;
-        _sounds.Enabled = _preferences.SoundEnabled;
+        _sounds.SetLevel(_preferences.SoundLevel);
         _parkWorld?.SetReducedMotion(_preferences.ReducedMotion);
     }
 
@@ -328,6 +348,11 @@ public partial class Main : Control
         BuildTimeControls(live);
         BuildHotbar(live);
         BuildToast(live);
+        _juiceLayer = new Control { Name = "JuiceLayer", MouseFilter = MouseFilterEnum.Ignore, ZIndex = 25 };
+        _juiceLayer.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        live.AddChild(_juiceLayer);
+        _observedSaleLedgerCount = _state.Business.Ledger.Count(entry => entry.DayIndex == _state.DayIndex && entry.Type == Zest.Domain.Economy.LedgerEntryType.Sale);
+        _observedLossCount = _state.Operations.LossEvents.Count(loss => loss.DayIndex == _state.DayIndex);
         RefreshLive();
     }
 
@@ -588,6 +613,7 @@ public partial class Main : Control
         _contextPanel.Visible = false;
         _managementPanel.Visible = false;
         SelectDestination(LiveDestination.None);
+        _currentContext = LiveDestination.None;
         _parkWorld.GrabFocus();
     }
 
@@ -605,15 +631,21 @@ public partial class Main : Control
     {
         _managementPanel.Visible = false;
         SelectDestination(LiveDestination.Stand);
+        _currentContext = LiveDestination.Stand;
         ClearChildren(_contextBody);
         _contextTitle.Text = "ZEST STAND";
         DaySessionSnapshot snapshot = _commands.Snapshot();
         int extra = _state.Operations.Interventions.PreparedBatches.Sum(item => item.RemainingServings);
         int classic = _runner.SellableServings("classic");
         bool disabled = IsProductDisabled("classic");
-        _contextBody.AddChild(ProductRow(HudGlyph.Lemon, $"CLASSIC · {Money(_runner.CurrentPrice("classic"))}", $"{classic} LEFT", disabled ? "PAUSED" : "FRESH", disabled ? Rust : Leaf));
+        string classicCue = disabled ? "PAUSED" : classic == 0 ? "SOLD OUT" : "FRESH";
+        Color classicCueColor = (disabled || classic == 0) ? Rust : Leaf;
+        _contextBody.AddChild(ProductRow(HudGlyph.Lemon, $"CLASSIC · {Money(_runner.CurrentPrice("classic"))}", $"{classic} LEFT", classicCue, classicCueColor));
         int berry = _runner.SellableServings("berry");
-        _contextBody.AddChild(ProductRow(HudGlyph.Berry, $"BERRY · {Money(_runner.CurrentPrice("berry"))}", $"{berry} LEFT", berry == 0 ? "SOLD OUT" : "FRESH", berry == 0 ? Rust : Leaf));
+        bool berryDisabled = IsProductDisabled("berry");
+        string berryCue = berryDisabled ? "PAUSED" : berry == 0 ? "SOLD OUT" : "FRESH";
+        Color berryCueColor = (berryDisabled || berry == 0) ? Rust : Leaf;
+        _contextBody.AddChild(ProductRow(HudGlyph.Berry, $"BERRY · {Money(_runner.CurrentPrice("berry"))}", $"{berry} LEFT", berryCue, berryCueColor));
         _contextBody.AddChild(LabelText("KEEP THE COUNTER READY. CHANGE THE PRICE ONLY WHEN DEMAND TELLS YOU TO.", ZestStyle.Type.Label, ZestStyle.Palette.MutedInk));
         HBoxContainer actions = new();
         actions.AddThemeConstantOverride("separation", 8);
@@ -661,6 +693,8 @@ public partial class Main : Control
     {
         _managementPanel.Visible = false;
         SelectDestination(LiveDestination.Customers);
+        _currentContext = LiveDestination.Customers;
+        _currentCustomerIndex = index;
         ClearChildren(_contextBody);
         Guid[] queue = _state.Operations.ActiveOrderIds.ToArray();
         if (index < 0 || index >= queue.Length || !_state.Operations.Orders.TryGetValue(queue[index], out OrderState? order))
@@ -828,11 +862,133 @@ public partial class Main : Control
             .Where(order => _observedDepartures.Add(order.OrderId))
             .ToDictionary(order => order.OrderId, order => order.Status == OrderStatus.Cancelled ? QueueDepartureKind.Abandoned : QueueDepartureKind.Served);
         _parkWorld.SetQueueCustomers(queueCustomers, departures);
+        ApplyRegularNameTags(queueCustomers);
+        ApplyOrderBadges(queueCustomers);
         int stock = _runner.SellableServings("classic");
         int preparedBatches = _state.Operations.Interventions.PreparedBatches.Count(item => item.RemainingServings > 0);
         bool rushMenu = _state.Operations.Interventions.RushMenuProductIds.Count > 0;
         _parkWorld.SetProductStatus(stock, IsProductDisabled("classic"), rushMenu, preparedBatches, ResolveUpgradeVisual());
         _parkWorld.SetVendorPose(ResolveVendorPose(snapshot.SimTime));
+        _parkWorld.SetWeather(_runner.WeatherId);
+        _parkWorld.SetReputation(_state.Progression.Reputation);
+        EmitSaleAndLossJuice();
+        if (_contextPanel.Visible)
+        {
+            if (_currentContext == LiveDestination.Stand) ShowStandContext();
+            else if (_currentContext == LiveDestination.Customers) ShowCustomerContext(_currentCustomerIndex);
+        }
+    }
+
+    private void EmitSaleAndLossJuice()
+    {
+        if (_juiceLayer is null) return;
+
+        var todaySales = _state.Business.Ledger
+            .Where(entry => entry.DayIndex == _state.DayIndex && entry.Type == Zest.Domain.Economy.LedgerEntryType.Sale)
+            .ToArray();
+        int newSaleCount = todaySales.Length - _observedSaleLedgerCount;
+        if (newSaleCount > 0)
+        {
+            long totalMinor = 0;
+            for (int i = _observedSaleLedgerCount; i < todaySales.Length; i++)
+                totalMinor += todaySales[i].Amount.MinorUnits;
+            _sounds.PlayCoin();
+            SpawnFloater($"+{Money(totalMinor)}", ZestStyle.Palette.ZestYellow, anchorRight: true);
+            _observedSaleLedgerCount = todaySales.Length;
+        }
+
+        var todayLosses = _state.Operations.LossEvents
+            .Where(loss => loss.DayIndex == _state.DayIndex)
+            .ToArray();
+        int newLossCount = todayLosses.Length - _observedLossCount;
+        if (newLossCount > 0)
+        {
+            var recent = todayLosses.Skip(_observedLossCount).ToArray();
+            var dominant = recent.GroupBy(l => l.Reason).OrderByDescending(g => g.Count()).First().Key;
+            _sounds.PlayWalkaway();
+            SpawnFloater(LossReasonBadge(dominant), ZestStyle.Palette.Rust, anchorRight: false);
+            _observedLossCount = todayLosses.Length;
+        }
+    }
+
+    private void ApplyOrderBadges(Guid[] queueCustomers)
+    {
+        foreach (Guid id in queueCustomers)
+        {
+            if (id == Guid.Empty || !_state.Operations.Orders.TryGetValue(id, out OrderState? order))
+            {
+                _parkWorld.SetCustomerOrderBadge(id, null);
+                continue;
+            }
+            bool isBerry = order.RecipeVersionId.RecipeId == "berry";
+            string label = isBerry ? "B" : "L";
+            Color bg = isBerry ? new Color(0.62f, 0.28f, 0.58f, .88f) : new Color(ZestStyle.Palette.ZestYellow, .88f);
+            Color text = isBerry ? Cream : Night;
+            _parkWorld.SetCustomerOrderBadge(id, label, text, bg);
+        }
+    }
+
+    private void ApplyRegularNameTags(Guid[] queueCustomers)
+    {
+        foreach (Guid id in queueCustomers)
+        {
+            if (id == Guid.Empty) continue;
+            if (!_customerRegularName.TryGetValue(id, out string? name))
+            {
+                // ~1 in 4 queue guests are a named regular; deterministic from id.
+                int hash = id.GetHashCode();
+                uint u = unchecked((uint)hash);
+                if (u % 4 != 0) { _customerRegularName[id] = ""; continue; }
+                name = RegularNames[(int)((u / 4) % (uint)RegularNames.Length)];
+                _customerRegularName[id] = name;
+                int visit = _regularVisits.GetValueOrDefault(name) + 1;
+                _regularVisits[name] = visit;
+                if (visit >= 2 && _greetedThisDay.Add(name))
+                    ShowToast($"{name} is back  ·  visit {visit}");
+            }
+            if (!string.IsNullOrEmpty(name))
+            {
+                int visits = _regularVisits.GetValueOrDefault(name);
+                _parkWorld.SetCustomerNameTag(id, visits > 1 ? $"{name} ·{visits}" : name);
+            }
+        }
+    }
+
+    private static string LossReasonBadge(Zest.Domain.Customers.LostSaleReason reason) => reason switch
+    {
+        Zest.Domain.Customers.LostSaleReason.PriceTooHigh => "TOO EXPENSIVE",
+        Zest.Domain.Customers.LostSaleReason.QueueAbandonment => "GAVE UP WAITING",
+        Zest.Domain.Customers.LostSaleReason.OutsideOption => "WALKED PAST",
+        Zest.Domain.Customers.LostSaleReason.PoorProductFit => "NOT INTERESTED",
+        Zest.Domain.Customers.LostSaleReason.ClosingTime => "MISSED · CLOSED",
+        Zest.Domain.Customers.LostSaleReason.NoNeed => "NOT THIRSTY",
+        Zest.Domain.Customers.LostSaleReason.NoticedNothing => "DIDN'T NOTICE",
+        _ => "LOST",
+    };
+
+    private void SpawnFloater(string text, Color color, bool anchorRight)
+    {
+        Label floater = LabelText(text, ZestStyle.Type.Action, color);
+        floater.AddThemeStyleboxOverride("normal", Box(new Color(Night, .82f), ZestStyle.Radius.Pill, 8, 1, new Color(color, .7f)));
+        floater.HorizontalAlignment = HorizontalAlignment.Center;
+        floater.VerticalAlignment = VerticalAlignment.Center;
+        floater.SetAnchorsPreset(anchorRight ? LayoutPreset.TopRight : LayoutPreset.TopLeft);
+        floater.OffsetLeft = anchorRight ? -260 : 40;
+        floater.OffsetRight = anchorRight ? -60 : 260;
+        floater.OffsetTop = 108;
+        floater.OffsetBottom = 146;
+        floater.MouseFilter = MouseFilterEnum.Ignore;
+        floater.Modulate = new Color(1, 1, 1, 0);
+        _juiceLayer.AddChild(floater);
+        Tween tween = floater.CreateTween();
+        tween.SetParallel(true);
+        tween.TweenProperty(floater, "modulate:a", 1f, .12f);
+        tween.TweenProperty(floater, "offset_top", 78f, .55f).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
+        tween.TweenProperty(floater, "offset_bottom", 116f, .55f).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
+        tween.SetParallel(false);
+        tween.TweenInterval(.55);
+        tween.TweenProperty(floater, "modulate:a", 0f, .35f);
+        tween.TweenCallback(Callable.From(floater.QueueFree));
     }
 
     private VendorPose ResolveVendorPose(long simTime)
@@ -911,6 +1067,9 @@ public partial class Main : Control
         _closeScheduled = false;
         _closingHourActive = false;
         _observedDepartures.Clear();
+        _observedSaleLedgerCount = 0;
+        _observedLossCount = 0;
+        _greetedThisDay.Clear();
         _clock = new SimulationClock(_state);
         _sounds.Play();
         ShowMorningBrief();
@@ -939,13 +1098,36 @@ public partial class Main : Control
 
     private string BuildReportInsight(DailyReportSnapshot report)
     {
-        int closing = _state.Operations.LossEvents.Count(loss => loss.DayIndex == report.DayIndex && loss.Reason == Zest.Domain.Customers.LostSaleReason.ClosingTime);
-        int abandonment = _state.Operations.LossEvents.Count(loss => loss.DayIndex == report.DayIndex && loss.Reason == Zest.Domain.Customers.LostSaleReason.QueueAbandonment);
-        if (closing > 0) return $"{closing} guests were still waiting at closing. A faster counter or a narrower rush menu would protect tomorrow's line.";
-        if (abandonment > 0) return $"{abandonment} guests left the queue before service. Queue time, not demand, was the limiting factor today.";
-        if (report.RemainingStock == 0) return "The visible menu sold through. Keep an eye on the next day’s opening batch before raising demand with a lower price.";
-        if (report.SalesCount == 0) return "The stand stayed open, but no orders converted. Review price and product fit before buying more capacity.";
-        return $"{report.SalesCount} guests were served with no observed queue loss. You have room to test price, menu mix, or a deliberate upgrade tomorrow.";
+        var todayLosses = _state.Operations.LossEvents
+            .Where(loss => loss.DayIndex == report.DayIndex)
+            .ToArray();
+        int closing = todayLosses.Count(l => l.Reason == Zest.Domain.Customers.LostSaleReason.ClosingTime);
+        int abandonment = todayLosses.Count(l => l.Reason == Zest.Domain.Customers.LostSaleReason.QueueAbandonment);
+        int priceLoss = todayLosses.Count(l => l.Reason == Zest.Domain.Customers.LostSaleReason.PriceTooHigh);
+        int noInterest = todayLosses.Count(l => l.Reason == Zest.Domain.Customers.LostSaleReason.PoorProductFit || l.Reason == Zest.Domain.Customers.LostSaleReason.OutsideOption);
+        int notNoticed = todayLosses.Count(l => l.Reason == Zest.Domain.Customers.LostSaleReason.NoticedNothing);
+
+        var lines = new List<string>();
+        lines.Add($"{report.SalesCount} served · {todayLosses.Length} lost · {Money(report.RevenueMinor)} revenue.");
+
+        if (closing > 0)
+            lines.Add($"{closing} guest{(closing == 1 ? "" : "s")} still waited at closing — a faster counter or a narrower rush menu would protect tomorrow's line.");
+        else if (abandonment >= 3)
+            lines.Add($"{abandonment} guests gave up in the queue. Wait time, not demand, was today's ceiling.");
+        else if (priceLoss >= 3)
+            lines.Add($"{priceLoss} guests balked at the price. A test cut for a single hour would tell you if it's the number or the fit.");
+        else if (noInterest >= 3)
+            lines.Add($"{noInterest} guests weren't hooked by the menu. Consider a variant or a signage change before touching price.");
+        else if (report.RemainingStock == 0 && report.SalesCount > 0)
+            lines.Add("Sold through the visible menu. Bigger opening batch tomorrow — or a small price nudge — turns a stockout into revenue.");
+        else if (report.SalesCount == 0)
+            lines.Add("The stand stayed open but nothing converted. Review price and product fit before buying more capacity.");
+        else if (notNoticed >= 5)
+            lines.Add($"{notNoticed} passersby didn't even notice the stand. Signage or foot-traffic timing matters more than menu today.");
+        else
+            lines.Add("Steady day with no dominant complaint. Tomorrow is a good day to test a price or a variant deliberately.");
+
+        return string.Join("\n\n", lines);
     }
 
     private static VBoxContainer Card(string kicker, string body)
