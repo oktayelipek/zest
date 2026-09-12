@@ -2,8 +2,8 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://lcl025qb29od"
-path="res://.godot/imported/sign_chalkboard_editorial_v01.png-5c77142ef60ee79762bd8c67e0a0f33a.ctex"
+uid="uid://lcl025qb3aod"
+path="res://.godot/imported/sign_chalkboard_editorial_v01.png-dda3d1c467f355c2246d5169b4ac26cb.ctex"
 metadata={
 "vram_texture": false
 }
@@ -11,7 +11,7 @@ metadata={
 [deps]
 
 source_file="res://art/production/final-grid-v02/sign_chalkboard_editorial_v01.png"
-dest_files=["res://.godot/imported/sign_chalkboard_editorial_v01.png-5c77142ef60ee79762bd8c67e0a0f33a.ctex"]
+dest_files=["res://.godot/imported/sign_chalkboard_editorial_v01.png-dda3d1c467f355c2246d5169b4ac26cb.ctex"]
 
 [params]
 

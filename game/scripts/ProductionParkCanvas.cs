@@ -73,10 +73,10 @@ public partial class ProductionParkCanvas : Node2D
         AddAnimatedProp("FlowerPlanter", FinalGridRoot + "prop_flower_planter_idle_v02.png", new(142, 35), 1, 0);
         AddAnimatedProp("WindBush", FinalGridRoot + "prop_bush_wind_4x1_v02.png", new(208, -16), 4, 3.5);
         TryAddOptionalProp("EditorialChalkboard", "sign_chalkboard_editorial_v01.png", new(-92, 14));
-        TryAddOptionalProp("TrailSignpost", "sign_signpost_v01.png", new(268, 88));
+        TryAddOptionalProp("TrailSignpost", "sign_signpost_v01.png", new(290, 108));
         TryAddOptionalProp("StandMenuBoard", "sign_stand_menu_v01.png", new(72, -6));
         TryAddOptionalProp("EditorialBanner", "sign_banner_editorial_v01.png", new(-132, -8));
-        AddAnimatedProp("BenchSongbird", FinalGridRoot + "prop_park_songbird_idle_6x1_v01.png", new(-194, -6), 6, 6, false);
+        AddAnimatedProp("BenchSongbird", FinalGridRoot + "prop_park_songbird_idle_6x1_v01.png", new(-194, 30), 6, 6, false);
         AddAnimatedProp("PondWaterLily", FinalGridRoot + "prop_water_lily_idle_6x1_v01.png", new(180, -110), 6, 5, false);
         AddAnimatedProp("PondDuck", FinalGridRoot + "prop_park_duck_idle_4x1_v01.png", new(212, -144), 4, 5, false);
         AddAnimatedProp("CattailSway", FinalGridRoot + "prop_water_cattail_sway_4x1_v01.png", new(240, -100), 4, 4, false);

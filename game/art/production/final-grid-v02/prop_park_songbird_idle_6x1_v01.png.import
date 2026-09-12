@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://j4u6radpyaa1"
-path="res://.godot/imported/prop_park_duck_idle_v01.png-3f27fb77fe3991633b99c0b8202b9dc9.ctex"
+uid="uid://dgj0gxsxfvpd"
+path="res://.godot/imported/prop_park_songbird_idle_6x1_v01.png-5c119ca98891ca72aa94375b5814d696.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/production/final-grid-v02/prop_park_duck_idle_v01.png"
-dest_files=["res://.godot/imported/prop_park_duck_idle_v01.png-3f27fb77fe3991633b99c0b8202b9dc9.ctex"]
+source_file="res://art/production/final-grid-v02/prop_park_songbird_idle_6x1_v01.png"
+dest_files=["res://.godot/imported/prop_park_songbird_idle_6x1_v01.png-5c119ca98891ca72aa94375b5814d696.ctex"]
 
 [params]
 

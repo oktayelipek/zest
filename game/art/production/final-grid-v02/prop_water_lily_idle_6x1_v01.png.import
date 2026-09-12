@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://j4u6radpyaa1"
-path="res://.godot/imported/prop_park_duck_idle_v01.png-3f27fb77fe3991633b99c0b8202b9dc9.ctex"
+uid="uid://do5h4ms1unr0q"
+path="res://.godot/imported/prop_water_lily_idle_6x1_v01.png-d408a56ddcc2294f443ff0a83f2af85a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/production/final-grid-v02/prop_park_duck_idle_v01.png"
-dest_files=["res://.godot/imported/prop_park_duck_idle_v01.png-3f27fb77fe3991633b99c0b8202b9dc9.ctex"]
+source_file="res://art/production/final-grid-v02/prop_water_lily_idle_6x1_v01.png"
+dest_files=["res://.godot/imported/prop_water_lily_idle_6x1_v01.png-d408a56ddcc2294f443ff0a83f2af85a.ctex"]
 
 [params]
 

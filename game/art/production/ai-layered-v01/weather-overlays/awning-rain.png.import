@@ -2,8 +2,8 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://9e177xc5whbp"
-path="res://.godot/imported/awning-rain.png-7274f5c20f06e157b50fa68dd03f1b3c.ctex"
+uid="uid://bae177xc5whbp"
+path="res://.godot/imported/awning-rain.png-9778a6865d58482bc71fd182238c1d43.ctex"
 metadata={
 "vram_texture": false
 }
@@ -11,7 +11,7 @@ metadata={
 [deps]
 
 source_file="res://art/production/ai-layered-v01/weather-overlays/awning-rain.png"
-dest_files=["res://.godot/imported/awning-rain.png-7274f5c20f06e157b50fa68dd03f1b3c.ctex"]
+dest_files=["res://.godot/imported/awning-rain.png-9778a6865d58482bc71fd182238c1d43.ctex"]
 
 [params]
 

@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://1383a2mdja43"
-path="res://.godot/imported/sign_stand_menu_v01.png-9377c7521f27bf195577842a46735ca9.ctex"
+path="res://.godot/imported/sign_stand_menu_v01.png-4399277e44eecb82469a08d6be7b152a.ctex"
 metadata={
 "vram_texture": false
 }
@@ -11,7 +11,7 @@ metadata={
 [deps]
 
 source_file="res://art/production/final-grid-v02/sign_stand_menu_v01.png"
-dest_files=["res://.godot/imported/sign_stand_menu_v01.png-9377c7521f27bf195577842a46735ca9.ctex"]
+dest_files=["res://.godot/imported/sign_stand_menu_v01.png-4399277e44eecb82469a08d6be7b152a.ctex"]
 
 [params]
 

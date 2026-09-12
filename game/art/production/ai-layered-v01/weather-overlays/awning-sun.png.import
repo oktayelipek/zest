@@ -2,8 +2,8 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://gtg86ib7ddza"
-path="res://.godot/imported/awning-sun.png-3c9d07ca2be0d9ccc725081f744997f4.ctex"
+uid="uid://gtg86ib7dd0a"
+path="res://.godot/imported/awning-sun.png-22128b2066d90fe2e123b1bc6cce71bd.ctex"
 metadata={
 "vram_texture": false
 }
@@ -11,7 +11,7 @@ metadata={
 [deps]
 
 source_file="res://art/production/ai-layered-v01/weather-overlays/awning-sun.png"
-dest_files=["res://.godot/imported/awning-sun.png-3c9d07ca2be0d9ccc725081f744997f4.ctex"]
+dest_files=["res://.godot/imported/awning-sun.png-22128b2066d90fe2e123b1bc6cce71bd.ctex"]
 
 [params]
 
