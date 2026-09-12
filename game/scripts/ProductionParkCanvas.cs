@@ -236,14 +236,15 @@ public partial class ZestStandVisual : Node2D
                 {
                     Name = "WeatherOverlay",
                     Centered = true,
-                    Position = new Vector2(0, -110),
                     TextureFilter = TextureFilterEnum.Nearest,
                     ZIndex = 3,
-                    Scale = Vector2.One * 0.11f,
                 };
                 AddChild(_weatherOverlay);
             }
-            _weatherOverlay.Texture = ResourceLoader.Load<Texture2D>(path);
+            Texture2D weatherTex = ResourceLoader.Load<Texture2D>(path);
+            _weatherOverlay.Texture = weatherTex;
+            _weatherOverlay.Scale = weatherTex.GetHeight() > 300 ? Vector2.One * 0.11f : Vector2.One;
+            _weatherOverlay.Position = weatherTex.GetHeight() > 300 ? new Vector2(0, -110) : new Vector2(0, -68);
             _weatherOverlay.Visible = true;
         }
         else
@@ -281,11 +282,14 @@ public partial class ZestStandVisual : Node2D
                     Position = new Vector2(0, -46),
                     TextureFilter = TextureFilterEnum.Nearest,
                     ZIndex = 4,
-                    Scale = Vector2.One * 0.041f,
                 };
                 AddChild(_vendorRainOverlay);
             }
-            _vendorRainOverlay.Texture = ResourceLoader.Load<Texture2D>(path);
+            Texture2D hatTex = ResourceLoader.Load<Texture2D>(path);
+            _vendorRainOverlay.Texture = hatTex;
+            _vendorRainOverlay.Scale = hatTex.GetWidth() > 100
+                ? Vector2.One * (22f / hatTex.GetWidth())
+                : Vector2.One;
             _vendorRainOverlay.Visible = true;
         }
         else
@@ -326,7 +330,11 @@ public partial class ZestStandVisual : Node2D
                 };
                 AddChild(_strongMenuFlag);
             }
-            _strongMenuFlag.Texture = ResourceLoader.Load<Texture2D>(path);
+            Texture2D flagTex = ResourceLoader.Load<Texture2D>(path);
+            _strongMenuFlag.Texture = flagTex;
+            _strongMenuFlag.Scale = flagTex.GetWidth() > 40
+                ? Vector2.One * (28f / flagTex.GetWidth())
+                : Vector2.One;
             _strongMenuFlag.Visible = true;
         }
         else
