@@ -151,6 +151,9 @@ public partial class ZestStandVisual : Node2D
     private Sprite2D? _weatherOverlay;
     private Sprite2D? _vendorRainOverlay;
     private Sprite2D? _strongMenuFlag;
+    private ProceduralAwning? _proceduralAwning;
+    private ProceduralRainHat? _proceduralHat;
+    private ProceduralStrongFlag? _proceduralFlag;
     private const string WeatherOverlayRoot = "res://art/production/ai-layered-v01/weather-overlays/";
     private const string StandOverlayRoot = "res://art/production/ai-layered-v01/stand-overlays/";
     private StandOperatingVisual _operatingState;
@@ -208,7 +211,7 @@ public partial class ZestStandVisual : Node2D
 
     public void SetVendorPose(VendorPose pose) => _vendor.SetPose(pose);
 
-    /// <summary>Swap the stand's weather-specific awning overlay. No-op if the art asset is not present yet.</summary>
+    /// <summary>Weather-specific awning overlay: PNG when present, otherwise a procedural rim cue.</summary>
     public void SetWeatherOverlay(string? weatherId)
     {
         string? path = weatherId switch
@@ -217,77 +220,125 @@ public partial class ZestStandVisual : Node2D
             "sunny" => WeatherOverlayRoot + "awning-sun.png",
             _ => null,
         };
-        if (path is null || !ResourceLoader.Exists(path))
+        bool wantsPng = path is not null && ResourceLoader.Exists(path);
+        if (path is null)
         {
             if (_weatherOverlay is not null) _weatherOverlay.Visible = false;
+            if (_proceduralAwning is not null) _proceduralAwning.SetKind(ProceduralAwning.Kind.None);
             return;
         }
-        if (_weatherOverlay is null)
+        if (wantsPng)
         {
-            _weatherOverlay = new Sprite2D
+            if (_proceduralAwning is not null) _proceduralAwning.SetKind(ProceduralAwning.Kind.None);
+            if (_weatherOverlay is null)
             {
-                Name = "WeatherOverlay",
-                Centered = true,
-                Position = new Vector2(0, -110),
-                TextureFilter = TextureFilterEnum.Nearest,
-                ZIndex = 3,
-                Scale = Vector2.One * 0.11f,
-            };
-            AddChild(_weatherOverlay);
+                _weatherOverlay = new Sprite2D
+                {
+                    Name = "WeatherOverlay",
+                    Centered = true,
+                    Position = new Vector2(0, -110),
+                    TextureFilter = TextureFilterEnum.Nearest,
+                    ZIndex = 3,
+                    Scale = Vector2.One * 0.11f,
+                };
+                AddChild(_weatherOverlay);
+            }
+            _weatherOverlay.Texture = ResourceLoader.Load<Texture2D>(path);
+            _weatherOverlay.Visible = true;
         }
-        _weatherOverlay.Texture = ResourceLoader.Load<Texture2D>(path);
-        _weatherOverlay.Visible = true;
+        else
+        {
+            if (_weatherOverlay is not null) _weatherOverlay.Visible = false;
+            if (_proceduralAwning is null)
+            {
+                _proceduralAwning = new ProceduralAwning { Name = "ProceduralAwning", Position = new Vector2(0, -95), ZIndex = 3 };
+                AddChild(_proceduralAwning);
+            }
+            _proceduralAwning.SetKind(weatherId == "rain" ? ProceduralAwning.Kind.Rain : ProceduralAwning.Kind.Sun);
+        }
     }
 
-    /// <summary>Small rain-hat/coat sprite anchored near the vendor head. Silent no-op if the PNG is absent.</summary>
+    /// <summary>Vendor rain-hat cue: PNG if present, otherwise a procedural little hat over the vendor head.</summary>
     public void SetVendorRainOverlay(bool active)
     {
         string path = WeatherOverlayRoot + "vendor-rain-hat.png";
-        if (!active || !ResourceLoader.Exists(path))
+        bool wantsPng = active && ResourceLoader.Exists(path);
+        if (!active)
         {
             if (_vendorRainOverlay is not null) _vendorRainOverlay.Visible = false;
+            if (_proceduralHat is not null) _proceduralHat.Visible = false;
             return;
         }
-        if (_vendorRainOverlay is null)
+        if (wantsPng)
         {
-            _vendorRainOverlay = new Sprite2D
+            if (_proceduralHat is not null) _proceduralHat.Visible = false;
+            if (_vendorRainOverlay is null)
             {
-                Name = "VendorRainOverlay",
-                Centered = true,
-                Position = new Vector2(0, -46),
-                TextureFilter = TextureFilterEnum.Nearest,
-                ZIndex = 4,
-                Scale = Vector2.One * 0.041f,
-            };
-            AddChild(_vendorRainOverlay);
+                _vendorRainOverlay = new Sprite2D
+                {
+                    Name = "VendorRainOverlay",
+                    Centered = true,
+                    Position = new Vector2(0, -46),
+                    TextureFilter = TextureFilterEnum.Nearest,
+                    ZIndex = 4,
+                    Scale = Vector2.One * 0.041f,
+                };
+                AddChild(_vendorRainOverlay);
+            }
+            _vendorRainOverlay.Texture = ResourceLoader.Load<Texture2D>(path);
+            _vendorRainOverlay.Visible = true;
         }
-        _vendorRainOverlay.Texture = ResourceLoader.Load<Texture2D>(path);
-        _vendorRainOverlay.Visible = true;
+        else
+        {
+            if (_vendorRainOverlay is not null) _vendorRainOverlay.Visible = false;
+            if (_proceduralHat is null)
+            {
+                _proceduralHat = new ProceduralRainHat { Name = "ProceduralRainHat", Position = new Vector2(0, -46), ZIndex = 4 };
+                AddChild(_proceduralHat);
+            }
+            _proceduralHat.Visible = true;
+        }
     }
 
-    /// <summary>Flag/menu cue shown once Strong Lemonade is on the menu. Silent no-op if the PNG is absent.</summary>
+    /// <summary>Strong menu cue: PNG if present, otherwise a procedural pennant flag.</summary>
     public void SetStrongMenuFlag(bool active)
     {
         string path = StandOverlayRoot + "strong-menu-flag.png";
-        if (!active || !ResourceLoader.Exists(path))
+        bool wantsPng = active && ResourceLoader.Exists(path);
+        if (!active)
         {
             if (_strongMenuFlag is not null) _strongMenuFlag.Visible = false;
+            if (_proceduralFlag is not null) _proceduralFlag.Visible = false;
             return;
         }
-        if (_strongMenuFlag is null)
+        if (wantsPng)
         {
-            _strongMenuFlag = new Sprite2D
+            if (_proceduralFlag is not null) _proceduralFlag.Visible = false;
+            if (_strongMenuFlag is null)
             {
-                Name = "StrongMenuFlag",
-                Centered = true,
-                Position = new Vector2(-58, -92),
-                TextureFilter = TextureFilterEnum.Nearest,
-                ZIndex = 5,
-            };
-            AddChild(_strongMenuFlag);
+                _strongMenuFlag = new Sprite2D
+                {
+                    Name = "StrongMenuFlag",
+                    Centered = true,
+                    Position = new Vector2(-58, -92),
+                    TextureFilter = TextureFilterEnum.Nearest,
+                    ZIndex = 5,
+                };
+                AddChild(_strongMenuFlag);
+            }
+            _strongMenuFlag.Texture = ResourceLoader.Load<Texture2D>(path);
+            _strongMenuFlag.Visible = true;
         }
-        _strongMenuFlag.Texture = ResourceLoader.Load<Texture2D>(path);
-        _strongMenuFlag.Visible = true;
+        else
+        {
+            if (_strongMenuFlag is not null) _strongMenuFlag.Visible = false;
+            if (_proceduralFlag is null)
+            {
+                _proceduralFlag = new ProceduralStrongFlag { Name = "ProceduralStrongFlag", Position = new Vector2(-58, -92), ZIndex = 5 };
+                AddChild(_proceduralFlag);
+            }
+            _proceduralFlag.Visible = true;
+        }
     }
 
     public void SetPresentation(StandUpgradeVisual upgrade, StandOperatingVisual operatingState, int preparedBatchCount)
@@ -487,8 +538,16 @@ public partial class HdCustomerActor : Node2D
     private float _simulationSpeed = 1f;
     private bool _reducedMotion;
     public Guid CustomerId { get; private set; }
+    private string? _segmentId;
     private const float RuntimeScale = .035f;
     private const float CanvasHeight = 1400;
+
+    private static Color TintForSegment(string? segmentId) => segmentId switch
+    {
+        "commuter" => new Color(1.05f, 0.86f, 0.78f, 1f), // warm rust wash
+        "tourist" => new Color(0.88f, 1.02f, 0.94f, 1f), // cool leaf wash
+        _ => Colors.White,
+    };
 
     public void Configure(bool walksRoute, int idleVariant, Guid customerId, int routeStartIndex = 0, string? segmentId = null)
     {
@@ -506,6 +565,7 @@ public partial class HdCustomerActor : Node2D
         _westSouthTurn = ResourceLoader.Load<Texture2D>(root + "customer-west-south-turn.png");
         _walksRoute = walksRoute;
         CustomerId = customerId;
+        _segmentId = segmentId;
         int startIndex = ((routeStartIndex % Route.Length) + Route.Length) % Route.Length;
         Position = walksRoute ? Route[startIndex] : Position;
         _routeIndex = walksRoute ? (startIndex + 1) % Route.Length : 1;
@@ -519,6 +579,7 @@ public partial class HdCustomerActor : Node2D
             Scale = Vector2.One * RuntimeScale,
             FlipH = idleVariant % 2 != 0,
             TextureFilter = TextureFilterEnum.Nearest,
+            Modulate = TintForSegment(_segmentId),
         };
         Polygon2D shadow = new()
         {
@@ -671,5 +732,94 @@ public partial class HdCustomerActor : Node2D
         _sprite.FlipH = row == 2;
         float bob = walking && (int)(_animationTime * 8) % 4 is 1 or 2 ? -1 : 0;
         _sprite.Position = new Vector2(0, -CanvasHeight * RuntimeScale / 2f + bob);
+    }
+}
+
+/// <summary>Palette-locked awning cue used until a painted PNG lands. Rain adds a river-blue rim with drips; sun adds a yellow glow rim.</summary>
+public partial class ProceduralAwning : Node2D
+{
+    public enum Kind { None, Rain, Sun }
+    private Kind _kind = Kind.None;
+    private double _time;
+
+    public void SetKind(Kind kind)
+    {
+        _kind = kind;
+        Visible = kind != Kind.None;
+        SetProcess(kind == Kind.Rain);
+        QueueRedraw();
+    }
+
+    public override void _Process(double delta)
+    {
+        _time += delta;
+        if (_kind == Kind.Rain) QueueRedraw();
+    }
+
+    public override void _Draw()
+    {
+        if (_kind == Kind.None) return;
+        // Awning silhouette: matches the ZEST_YELLOW awning band on the stand.
+        Color rim = _kind == Kind.Rain ? ZestStyle.Palette.River : ZestStyle.Palette.SunlitYellow;
+        Vector2[] band =
+        [
+            new(-56, -3), new(56, -3), new(56, 3), new(-56, 3),
+        ];
+        DrawColoredPolygon(band, new Color(rim, 0.7f));
+        if (_kind == Kind.Sun)
+        {
+            // Soft glow above the awning
+            for (int i = 0; i < 4; i++)
+                DrawRect(new Rect2(-56 + i * 30, -6 - i, 22, 1), new Color(ZestStyle.Palette.SunlitYellow, 0.28f - i * 0.05f));
+        }
+        else
+        {
+            // Drip pattern with subtle animated offset
+            float phase = (float)(_time * 2.0);
+            for (int i = -2; i <= 2; i++)
+            {
+                float x = i * 22;
+                float dy = ((phase + i * 0.3f) % 1.0f) * 6f;
+                DrawLine(new Vector2(x, 3), new Vector2(x - 1, 6 + dy), new Color(rim, 0.75f), 1f);
+            }
+        }
+    }
+}
+
+/// <summary>Small drawn rain hat over the vendor's head when weather is rain and no PNG has landed.</summary>
+public partial class ProceduralRainHat : Node2D
+{
+    public override void _Draw()
+    {
+        // Brim
+        DrawColoredPolygon(new Vector2[] { new(-7, 0), new(7, 0), new(6, 2), new(-6, 2) }, ZestStyle.Palette.WorldWood);
+        // Crown
+        DrawColoredPolygon(new Vector2[] { new(-4, -4), new(4, -4), new(4, 0), new(-4, 0) }, ZestStyle.Palette.DeepWood);
+        // Highlight
+        DrawLine(new Vector2(-3, -4), new Vector2(3, -4), new Color(ZestStyle.Palette.WorldSkin, 0.4f), 1f);
+    }
+}
+
+/// <summary>Amber pennant that reads STRONG once the recipe is on the menu.</summary>
+public partial class ProceduralStrongFlag : Node2D
+{
+    private PixelWorldText? _label;
+
+    public override void _Ready()
+    {
+        _label = new PixelWorldText { Name = "StrongLabel", Position = new Vector2(0, -6), ZIndex = 1 };
+        _label.Configure("STRONG", ZestStyle.Palette.Charcoal, centered: true);
+        AddChild(_label);
+    }
+
+    public override void _Draw()
+    {
+        // Pole
+        DrawLine(new Vector2(-20, 0), new Vector2(-20, -18), ZestStyle.Palette.WorldWood, 1f);
+        // Pennant
+        DrawColoredPolygon(new Vector2[]
+        {
+            new(-20, -18), new(20, -14), new(-20, -10),
+        }, ZestStyle.Palette.Amber);
     }
 }

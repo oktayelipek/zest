@@ -22,8 +22,10 @@ public partial class ParkWorldView : SubViewportContainer
     private PixelWorldText _stockBoard = null!;
     private PixelWorldText _queueBoard = null!;
     private ColorRect _weatherTint = null!;
+    private ColorRect _eveningTint = null!;
     private RainOverlay _rain = null!;
     private ReputationStars _stars = null!;
+    private bool _eveningActive;
     private string? _lastWeatherId;
     private Vector2 _target;
     private CameraFraming _framing = CameraFraming.Business;
@@ -221,7 +223,16 @@ public partial class ParkWorldView : SubViewportContainer
 
     public void SetStrongMenu(bool active) => _park?.Stand.SetStrongMenuFlag(active);
 
-    public void SetEveningBackground(bool evening) => _park?.SetTimeOfDay(evening);
+    public void SetEveningBackground(bool evening)
+    {
+        _park?.SetTimeOfDay(evening);
+        if (_eveningTint is null || _eveningActive == evening) return;
+        _eveningActive = evening;
+        // Warm amber wash for the closing hours when no evening PNG is baked yet.
+        Color target = evening ? new Color(1.0f, 0.62f, 0.32f, 0.16f) : new Color(0, 0, 0, 0);
+        Tween tween = _eveningTint.CreateTween();
+        tween.TweenProperty(_eveningTint, "color", target, 1.2);
+    }
 
     public void SetReputation(int reputation)
     {
@@ -325,6 +336,15 @@ public partial class ParkWorldView : SubViewportContainer
         };
         _weatherTint.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         _viewport.AddChild(_weatherTint);
+
+        _eveningTint = new ColorRect
+        {
+            Name = "EveningTint",
+            Color = new Color(0, 0, 0, 0),
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        };
+        _eveningTint.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        _viewport.AddChild(_eveningTint);
 
         _rain = new RainOverlay
         {
