@@ -270,5 +270,49 @@ public sealed class ConfiguredLiveSessionTests
                         or LostSaleReason.ClosingTime);
     }
 
+    [Fact]
+    public void Mid_day_quicksave_round_trips_cash_inventory_and_interventions()
+    {
+        ContentConfig config = new ConfigLoader().Load(ConfigRoot());
+        GameState state = ConfigGameStateFactory.CreateEmpty(8675309, config);
+        LiveDayRunner runner = ConfigLiveSessionFactory.Create(state, config, new DateOnly(2026, 9, 10));
+        DayCommandProcessor commands = new(state, runner);
+        commands.Execute(new PlanDayCommand(350, 12));
+        commands.Execute(new StartLiveCommand());
+        commands.Execute(new AdvanceLiveCommand(3 * 60 * 60));
+        commands.Execute(new PrepareExtraBatchCommand("classic", 3, 900));
+        commands.Execute(new AdvanceLiveCommand(60));
+        commands.Execute(new ChangeLivePriceCommand("classic", 400));
+
+        string path = Path.Combine(Path.GetTempPath(), $"zest-quick-{Guid.NewGuid():N}.json");
+        try
+        {
+            DayBoundarySaveService saves = new();
+            saves.Save(path, state);
+            long savedCash = state.Business.CashMinorUnits;
+            long savedSimTime = state.SimTime;
+            var savedInventory = state.Inventory.Quantities.OrderBy(k => k.Key).ToArray();
+            var savedBatches = state.Operations.Interventions.PreparedBatches.Select(b => (b.ProductId, b.RemainingServings)).ToArray();
+            var savedPrices = state.Operations.Interventions.CurrentPrices.OrderBy(k => k.Key).ToArray();
+
+            GameState restored = saves.Load(path);
+            Assert.Equal(savedCash, restored.Business.CashMinorUnits);
+            Assert.Equal(savedSimTime, restored.SimTime);
+            Assert.Equal(DayPhase.Live, restored.DayCycle.Phase);
+            Assert.Equal(savedInventory, restored.Inventory.Quantities.OrderBy(k => k.Key).ToArray());
+            Assert.Equal(savedBatches, restored.Operations.Interventions.PreparedBatches.Select(b => (b.ProductId, b.RemainingServings)).ToArray());
+            Assert.Equal(savedPrices, restored.Operations.Interventions.CurrentPrices.OrderBy(k => k.Key).ToArray());
+
+            LiveDayRunner restoredRunner = ConfigLiveSessionFactory.CreateRunner(restored, config, new DateOnly(2026, 9, 10));
+            restored.Operations.ClearActiveWork();
+            restoredRunner.ResumeMidDay();
+            DayCommandProcessor restoredCommands = new(restored, restoredRunner);
+            restoredCommands.Execute(new AdvanceLiveCommand(60 * 60));
+
+            Assert.True(restored.Business.CashMinorUnits >= savedCash - 5000, "Cash should not silently vanish after resume.");
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
     private static string ConfigRoot() => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "config"));
 }

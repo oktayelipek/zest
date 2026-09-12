@@ -47,6 +47,9 @@ public sealed class DayCommandProcessor
             case AddBerryToMenuCommand:
                 new ProgressionService(_state).AddBerryToMenu();
                 break;
+            case AddStrongToMenuCommand:
+                new ProgressionService(_state).AddStrongToMenu();
+                break;
             case ActivateRushMenuCommand rush:
                 new LiveInterventionService(_state).ActivateRushMenu(rush.ProductIds);
                 break;

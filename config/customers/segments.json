@@ -8,7 +8,7 @@
     "noticeProbability": 0.85,
     "interestProbability": 0.9,
     "outsideOptionUtility": 0.25,
-    "tasteWeights": { "classic": 1.0, "berry": 0.82 },
+    "tasteWeights": { "classic": 1.0, "berry": 0.82, "strong": 0.4 },
     "hourlyWeights": [
       { "hour": 0, "weight": 0 }, { "hour": 1, "weight": 0 }, { "hour": 2, "weight": 0 }, { "hour": 3, "weight": 0 },
       { "hour": 4, "weight": 0 }, { "hour": 5, "weight": 0 }, { "hour": 6, "weight": 0.2 }, { "hour": 7, "weight": 0.5 },
@@ -16,6 +16,44 @@
       { "hour": 12, "weight": 2.0 }, { "hour": 13, "weight": 2.0 }, { "hour": 14, "weight": 1.5 }, { "hour": 15, "weight": 1.8 },
       { "hour": 16, "weight": 2.0 }, { "hour": 17, "weight": 1.6 }, { "hour": 18, "weight": 1.0 }, { "hour": 19, "weight": 0.7 },
       { "hour": 20, "weight": 0.4 }, { "hour": 21, "weight": 0.2 }, { "hour": 22, "weight": 0.1 }, { "hour": 23, "weight": 0 }
+    ]
+  },
+  {
+    "id": "commuter",
+    "displayName": "Commuter",
+    "arrivalWeight": 0.9,
+    "priceSensitivity": 0.45,
+    "referencePriceMinor": 425,
+    "noticeProbability": 0.65,
+    "interestProbability": 0.7,
+    "outsideOptionUtility": 0.35,
+    "tasteWeights": { "classic": 0.6, "berry": 0.4, "strong": 1.0 },
+    "hourlyWeights": [
+      { "hour": 0, "weight": 0 }, { "hour": 1, "weight": 0 }, { "hour": 2, "weight": 0 }, { "hour": 3, "weight": 0 },
+      { "hour": 4, "weight": 0 }, { "hour": 5, "weight": 0 }, { "hour": 6, "weight": 0.4 }, { "hour": 7, "weight": 1.6 },
+      { "hour": 8, "weight": 2.4 }, { "hour": 9, "weight": 1.3 }, { "hour": 10, "weight": 0.4 }, { "hour": 11, "weight": 0.3 },
+      { "hour": 12, "weight": 0.8 }, { "hour": 13, "weight": 0.6 }, { "hour": 14, "weight": 0.3 }, { "hour": 15, "weight": 0.4 },
+      { "hour": 16, "weight": 0.9 }, { "hour": 17, "weight": 2.1 }, { "hour": 18, "weight": 2.3 }, { "hour": 19, "weight": 1.2 },
+      { "hour": 20, "weight": 0.5 }, { "hour": 21, "weight": 0.2 }, { "hour": 22, "weight": 0 }, { "hour": 23, "weight": 0 }
+    ]
+  },
+  {
+    "id": "tourist",
+    "displayName": "Tourist",
+    "arrivalWeight": 0.7,
+    "priceSensitivity": 0.55,
+    "referencePriceMinor": 500,
+    "noticeProbability": 0.95,
+    "interestProbability": 0.85,
+    "outsideOptionUtility": 0.15,
+    "tasteWeights": { "classic": 0.7, "berry": 1.0, "strong": 0.5 },
+    "hourlyWeights": [
+      { "hour": 0, "weight": 0 }, { "hour": 1, "weight": 0 }, { "hour": 2, "weight": 0 }, { "hour": 3, "weight": 0 },
+      { "hour": 4, "weight": 0 }, { "hour": 5, "weight": 0 }, { "hour": 6, "weight": 0 }, { "hour": 7, "weight": 0.1 },
+      { "hour": 8, "weight": 0.3 }, { "hour": 9, "weight": 0.8 }, { "hour": 10, "weight": 1.4 }, { "hour": 11, "weight": 1.8 },
+      { "hour": 12, "weight": 2.0 }, { "hour": 13, "weight": 2.2 }, { "hour": 14, "weight": 2.4 }, { "hour": 15, "weight": 2.1 },
+      { "hour": 16, "weight": 1.6 }, { "hour": 17, "weight": 1.1 }, { "hour": 18, "weight": 0.7 }, { "hour": 19, "weight": 0.4 },
+      { "hour": 20, "weight": 0.2 }, { "hour": 21, "weight": 0.1 }, { "hour": 22, "weight": 0 }, { "hour": 23, "weight": 0 }
     ]
   }
 ]

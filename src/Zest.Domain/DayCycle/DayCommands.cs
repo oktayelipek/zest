@@ -11,6 +11,7 @@ public sealed record PurchaseBetterCounterCommand : IDayCommand;
 public sealed record PurchaseElectricJuicerCommand : IDayCommand;
 public sealed record PurchaseBiggerCoolerCommand : IDayCommand;
 public sealed record AddBerryToMenuCommand : IDayCommand;
+public sealed record AddStrongToMenuCommand : IDayCommand;
 public sealed record ActivateRushMenuCommand(IReadOnlyList<string> ProductIds) : IDayCommand;
 public sealed record PrepareExtraBatchCommand(string ProductId, int Servings, int FreshnessSeconds) : IDayCommand;
 public sealed record TemporarilyDisableProductCommand(string ProductId, int DurationSeconds = 900) : IDayCommand;

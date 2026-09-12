@@ -99,6 +99,28 @@ public sealed class LiveInterventionState
     internal void AddRestock(EmergencyRestockState item) => _emergencyRestocks.Add(item);
     internal void AddExtraHelp(ExtraHelpState item) => _extraHelpCalls.Add(item);
     internal void AddPriceChange(LivePriceChange item) { _priceChanges.Add(item); _currentPrices[item.ProductId] = item.NewPriceMinor; }
+
+    internal void RestoreForQuicksave(
+        IEnumerable<PreparedBatchState>? preparedBatches,
+        IReadOnlyDictionary<string, long>? currentPrices,
+        IReadOnlyDictionary<string, long>? disabledUntil,
+        IEnumerable<string>? rushMenu)
+    {
+        _preparedBatches.Clear();
+        if (preparedBatches is not null) _preparedBatches.AddRange(preparedBatches);
+        _currentPrices.Clear();
+        if (currentPrices is not null)
+            foreach (var pair in currentPrices) _currentPrices[pair.Key] = pair.Value;
+        _disabledUntil.Clear();
+        if (disabledUntil is not null)
+            foreach (var pair in disabledUntil) _disabledUntil[pair.Key] = pair.Value;
+        _rushMenuProductIds.Clear();
+        if (rushMenu is not null) foreach (var id in rushMenu) _rushMenuProductIds.Add(id);
+    }
+
+    /// <summary>Test/factory hook to reconstruct a prepared batch outside the intervention service.</summary>
+    public static PreparedBatchState HydrateBatch(Guid id, string productId, int initial, int remaining, long preparedAt, long expiresAt, long prepaidCost) =>
+        new(id, productId, initial, preparedAt, expiresAt, prepaidCost) { RemainingServings = remaining };
 }
 
 /// <summary>Authoritative command boundary for live-day operational interventions.</summary>

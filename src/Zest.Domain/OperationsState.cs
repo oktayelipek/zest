@@ -37,4 +37,26 @@ public sealed class OperationsState
         _lossEvents.Add(loss);
         return true;
     }
+
+    /// <summary>Drops any live-day orders/tasks/reservation-acquisitions so a mid-day reload starts with an empty queue.</summary>
+    public void ClearActiveWork()
+    {
+        Guid[] activeOrderIds = _orders.Values
+            .Where(o => o.Status is not (OrderStatus.Served or OrderStatus.Cancelled))
+            .Select(o => o.OrderId).ToArray();
+        foreach (Guid id in activeOrderIds)
+        {
+            OrderState order = _orders[id];
+            foreach (string taskId in order.TaskIds)
+                if (_tasks.TryGetValue(taskId, out WorkTaskState? task))
+                {
+                    foreach (var resource in _resources.Values) resource.Release(task.TaskId);
+                    _tasks.Remove(taskId);
+                }
+            _orders.Remove(id);
+        }
+        NextOrderSequence = 0;
+        NextTaskSequence = 0;
+        SchedulerSimTime = 0;
+    }
 }

@@ -41,4 +41,25 @@
       }
     ]
   }
+  ,
+  {
+    "id": "strong",
+    "displayName": "Strong Lemonade",
+    "ingredients": [
+      { "ingredientId": "lemon", "quantity": 2, "unit": "each" },
+      { "ingredientId": "sugar", "quantity": 15, "unit": "g" },
+      { "ingredientId": "water", "quantity": 250, "unit": "ml" }
+    ],
+    "salePriceMinor": 500,
+    "prepSeconds": 35,
+    "steps": [
+      {
+        "id": "prepare",
+        "durationSeconds": 35,
+        "stationId": "service-counter",
+        "equipmentId": "basic-stand",
+        "staffId": "owner"
+      }
+    ]
+  }
 ]

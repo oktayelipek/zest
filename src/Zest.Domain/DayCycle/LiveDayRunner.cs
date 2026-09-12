@@ -64,6 +64,21 @@ public sealed class LiveDayRunner
     public LivePriceChange ChangePrice(string productId, long priceMinor) =>
         new LiveInterventionService(_state).ChangeLivePrice(productId, priceMinor, basePriceMinor: RecipeFor(productId).SalePriceMinor);
 
+    /// <summary>Restore the runner's internal position for a mid-day quicksave reload.
+    /// Regenerates the deterministic world day, marks past hours as already-generated so they are not replayed,
+    /// and starts with an empty order book (any active queue is intentionally dropped on load).</summary>
+    public void ResumeMidDay()
+    {
+        DateOnly date = _firstDate.AddDays(_state.DayIndex);
+        _day = _world.GenerateDayContext(_state, date, _worldProfile);
+        // Skip regenerating any hour whose start is at or before the saved SimTime;
+        // partial current-hour traffic is intentionally lost on resume.
+        int hoursElapsed = Math.Clamp((int)(_state.SimTime / 3600), 0, 10);
+        _generatedThroughHour = Math.Max(7, 8 + hoursElapsed);
+        _processedSimTime = _state.SimTime;
+        _orderRecipes.Clear();
+    }
+
     public void StartDay()
     {
         if (_state.Business.Ledger.Count == 0 && _state.Business.OpeningCashMinorUnits == 0)
@@ -192,7 +207,13 @@ public sealed class LiveDayRunner
     {
         // Classic is always on-menu. Optional recipes require an explicit unlock decision.
         Dictionary<string, ProductChoiceProfile> allowed = profile.Products
-            .Where(pair => pair.Key == "classic" || (pair.Key == "berry" && _state.Progression.Has(MenuIds.Berry)))
+            .Where(pair => pair.Key switch
+            {
+                "classic" => true,
+                "berry" => _state.Progression.Has(MenuIds.Berry),
+                "strong" => _state.Progression.Has(MenuIds.Strong),
+                _ => false,
+            })
             .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
         return allowed.Count == profile.Products.Count ? profile : profile with { Products = allowed };
     }

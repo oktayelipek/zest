@@ -12,8 +12,10 @@ public static class GameStateFactory
     public static DayCycle.DayBoundarySnapshot CreateDayBoundarySnapshot(GameState state)
     {
         ArgumentNullException.ThrowIfNull(state);
-        if (state.DayCycle.Phase != DayCycle.DayPhase.MorningBrief)
-            throw new InvalidOperationException("Runs can be saved only at the morning boundary.");
+        var interventions = state.Operations.Interventions;
+        var batches = interventions.PreparedBatches
+            .Select(b => new DayCycle.PreparedBatchSnapshot(b.BatchId, b.ProductId, b.InitialServings, b.RemainingServings, b.PreparedAtSimTime, b.ExpiresAtSimTime, b.PrepaidCostMinor))
+            .ToArray();
         return new(DayCycle.DayBoundarySnapshot.CurrentSaveVersion, state.RootSeed, state.ConfigVersion, state.DayIndex,
             state.Business.OpeningCashMinorUnits, state.Business.CashMinorUnits,
             state.DayCycle.PlannedPriceMinor, state.DayCycle.PlannedBatchSize,
@@ -21,7 +23,14 @@ public static class GameStateFactory
             state.Progression.Unlocks.OrderBy(id => id, StringComparer.Ordinal).ToArray(),
             state.Inventory.Lots.Values.OrderBy(lot => lot.LotId, StringComparer.Ordinal)
                 .Select(lot => new DayCycle.InventoryLotSnapshot(lot.LotId, lot.IngredientId, lot.RemainingQuantity, lot.ExpiresOn)).ToArray(),
-            state.Business.Ledger.ToArray());
+            state.Business.Ledger.ToArray(),
+            SimTime: state.SimTime,
+            Phase: state.DayCycle.Phase.ToString(),
+            RemainingOpeningServings: state.DayCycle.RemainingOpeningServings,
+            PreparedBatches: batches,
+            CurrentPrices: interventions.CurrentPrices.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal),
+            DisabledUntil: interventions.DisabledUntil.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal),
+            RushMenuIds: interventions.RushMenuProductIds.ToArray());
     }
 
     public static GameState RestoreDayBoundary(DayCycle.DayBoundarySnapshot snapshot)
@@ -39,6 +48,15 @@ public static class GameStateFactory
         Inventory.InventoryService inventory = new(state.Inventory);
         foreach (DayCycle.InventoryLotSnapshot lot in snapshot.Inventory)
             inventory.ReceiveLot(lot.LotId, lot.IngredientId, lot.RemainingQuantity, lot.ExpiresOn);
+        if (snapshot.SaveVersion >= 3)
+        {
+            state.SimTime = snapshot.SimTime;
+            state.DayCycle.Phase = Enum.TryParse<DayCycle.DayPhase>(snapshot.Phase, out var phase) ? phase : DayCycle.DayPhase.MorningBrief;
+            state.DayCycle.RemainingOpeningServings = snapshot.RemainingOpeningServings;
+            var batches = (snapshot.PreparedBatches ?? Array.Empty<DayCycle.PreparedBatchSnapshot>())
+                .Select(b => Operations.LiveInterventionState.HydrateBatch(b.BatchId, b.ProductId, b.InitialServings, b.RemainingServings, b.PreparedAtSimTime, b.ExpiresAtSimTime, b.PrepaidCostMinor));
+            state.Operations.Interventions.RestoreForQuicksave(batches, snapshot.CurrentPrices, snapshot.DisabledUntil, snapshot.RushMenuIds);
+        }
         return state;
     }
 }

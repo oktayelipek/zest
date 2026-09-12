@@ -208,7 +208,7 @@ public partial class Main : Control
         HBoxContainer columns = new();
         columns.AddThemeConstantOverride("separation", ZestStyle.Space.Lg);
         _page.AddChild(columns);
-        VBoxContainer editorial = Card("TODAY'S NOTE", "Warm weather should bring a steady lunch crowd. Keep enough Classic ready without tying up every lemon.");
+        VBoxContainer editorial = Card("TODAY'S NOTE", BuildTodaysNote());
         editorial.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         columns.AddChild(editorial);
         VBoxContainer planning = Card("PLAN THE STAND", "Set the promise you want operations to keep.");
@@ -315,6 +315,72 @@ public partial class Main : Control
         _unlocksAtDayStart = _state.Progression.Unlocks.ToHashSet(StringComparer.Ordinal);
     }
 
+    private VBoxContainer BuildSparklineCard(int currentDayIndex)
+    {
+        long[] revenueByDay = new long[7];
+        int startDay = Math.Max(0, currentDayIndex - 6);
+        for (int day = startDay; day <= currentDayIndex; day++)
+        {
+            long revenue = _state.Business.Ledger
+                .Where(e => e.DayIndex == day && e.Type == Zest.Domain.Economy.LedgerEntryType.Sale)
+                .Sum(e => e.Amount.MinorUnits);
+            revenueByDay[day - startDay] = revenue;
+        }
+        VBoxContainer card = Card("RECENT REVENUE",
+            $"Last {currentDayIndex - startDay + 1} day{(currentDayIndex - startDay > 0 ? "s" : "")} of sales.");
+        RevenueSparkline chart = new()
+        {
+            Values = revenueByDay,
+            FilledCount = currentDayIndex - startDay + 1,
+            CustomMinimumSize = new Vector2(0, 68),
+        };
+        card.AddChild(chart);
+        return card;
+    }
+
+    private partial class RevenueSparkline : Control
+    {
+        public long[] Values { get; init; } = [];
+        public int FilledCount { get; init; }
+
+        public override void _Draw()
+        {
+            if (Values.Length == 0 || Size.X <= 0 || Size.Y <= 0) return;
+            long max = Math.Max(1, Values.Max());
+            float w = Size.X, h = Size.Y;
+            float slot = w / Values.Length;
+            float barWidth = Mathf.Max(4, slot - 6);
+            Color filled = ZestStyle.Palette.ZestYellow;
+            Color pending = new(1, 1, 1, 0.18f);
+            for (int i = 0; i < Values.Length; i++)
+            {
+                float ratio = Values[i] / (float)max;
+                float barH = ratio * (h - 12);
+                float x = i * slot + (slot - barWidth) / 2f;
+                float y = h - barH;
+                Color c = i < FilledCount ? filled : pending;
+                DrawRect(new Rect2(x, y, barWidth, barH), c);
+                if (i < FilledCount && Values[i] > 0)
+                {
+                    // small dot at top marks the value
+                    DrawRect(new Rect2(x, y - 2, barWidth, 2), c);
+                }
+            }
+            // baseline
+            DrawLine(new Vector2(0, h - 1), new Vector2(w, h - 1), new Color(ZestStyle.Palette.MutedInk, .4f), 1);
+        }
+    }
+
+    private string BuildTodaysNote()
+    {
+        var park = _config.Locations.Values.First();
+        var peak = park.TrafficCurve.OrderByDescending(t => t.OpportunitiesPerHour).First();
+        int peakHour = 8 + ((peak.Hour - 8 + 24) % 24);
+        // In-game clock shows sim hours 08:00–18:00 mapped from SimTime; display peak as HH:00 wall-clock.
+        int shownHour = peak.Hour;
+        return $"Foot traffic peaks around {shownHour:00}:00 — plan opening batch and prep timing for that window. Keep enough Classic ready without tying up every lemon.";
+    }
+
     private static string UpgradeDisplayName(string id) => id switch
     {
         UpgradeIds.BetterCounter => "Better Counter (−10s prep)",
@@ -344,8 +410,24 @@ public partial class Main : Control
             _commands = new DayCommandProcessor(_state, _runner);
             _clock = new SimulationClock(_state);
             _sounds.Play();
-            ShowMorningBrief();
-            ShowToast("Saved morning restored.");
+            switch (_state.DayCycle.Phase)
+            {
+                case DayPhase.Live:
+                    // Mid-day quicksave: drop any partial queue and resume the day from the saved sim time.
+                    _state.Operations.ClearActiveWork();
+                    _runner.ResumeMidDay();
+                    ShowLive();
+                    ShowToast("Quicksave restored — queue reset for this hour.");
+                    break;
+                case DayPhase.Report:
+                    ShowReport(_state.DayCycle.Report!);
+                    ShowToast("Quicksave restored (end of day).");
+                    break;
+                default:
+                    ShowMorningBrief();
+                    ShowToast("Saved morning restored.");
+                    break;
+            }
         }
         catch (Exception error) when (error is IOException or InvalidDataException or NotSupportedException)
         {
@@ -519,6 +601,21 @@ public partial class Main : Control
         ZestUiSkin.Tooltip(_timePanel, "Live-day clock · Space pauses or resumes");
         live.AddChild(_timePanel);
 
+        Button quicksave = CompactButton("Quicksave", Paper, Ink);
+        quicksave.ZIndex = 10;
+        quicksave.SetAnchorsPreset(LayoutPreset.BottomRight);
+        quicksave.OffsetLeft = -205;
+        quicksave.OffsetRight = -20;
+        quicksave.OffsetTop = -130;
+        quicksave.OffsetBottom = -90;
+        quicksave.Pressed += () =>
+        {
+            try { _saves.Save(SavePath, _state); _sounds.Play(); ShowToast("Quicksave written."); }
+            catch (Exception e) when (e is IOException) { ShowToast($"Save failed: {e.Message}"); }
+        };
+        ZestUiSkin.Tooltip(quicksave, "Save the current day so you can resume later. Active queue is dropped on reload.");
+        live.AddChild(quicksave);
+
         _endDayButton = CompactButton("Close the stand  →", Rust, Cream);
         _endDayButton.ZIndex = 10;
         _endDayButton.SetAnchorsPreset(LayoutPreset.BottomRight);
@@ -677,6 +774,14 @@ public partial class Main : Control
         else
         {
             _contextBody.AddChild(LabelText("BERRY  ·  NOT YET ON MENU", ZestStyle.Type.Label, ZestStyle.Palette.MutedInk));
+        }
+        if (_state.Progression.Has(MenuIds.Strong))
+        {
+            int strong = _runner.SellableServings("strong");
+            bool strongDisabled = IsProductDisabled("strong");
+            string strongCue = strongDisabled ? "PAUSED" : strong == 0 ? "SOLD OUT" : "FRESH";
+            Color strongCueColor = (strongDisabled || strong == 0) ? Rust : Leaf;
+            _contextBody.AddChild(ProductRow(HudGlyph.Lemon, $"STRONG · {Money(_runner.CurrentPrice("strong"))}", $"{strong} LEFT", strongCue, strongCueColor));
         }
         _contextBody.AddChild(LabelText("KEEP THE COUNTER READY. CHANGE THE PRICE ONLY WHEN DEMAND TELLS YOU TO.", ZestStyle.Type.Label, ZestStyle.Palette.MutedInk));
         HBoxContainer actions = new();
@@ -952,10 +1057,13 @@ public partial class Main : Control
                 _parkWorld.SetCustomerOrderBadge(id, null);
                 continue;
             }
-            bool isBerry = order.RecipeVersionId.RecipeId == "berry";
-            string label = isBerry ? "B" : "L";
-            Color bg = isBerry ? new Color(0.62f, 0.28f, 0.58f, .88f) : new Color(ZestStyle.Palette.ZestYellow, .88f);
-            Color text = isBerry ? Cream : Night;
+            string recipeId = order.RecipeVersionId.RecipeId;
+            (string label, Color bg, Color text) = recipeId switch
+            {
+                "berry" => ("B", new Color(0.62f, 0.28f, 0.58f, .88f), Cream),
+                "strong" => ("S", new Color(0.85f, 0.55f, 0.15f, .90f), Night),
+                _ => ("L", new Color(ZestStyle.Palette.ZestYellow, .88f), Night),
+            };
             _parkWorld.SetCustomerOrderBadge(id, label, text, bg);
         }
     }
@@ -1081,6 +1189,7 @@ public partial class Main : Control
         AddReportCard(cards, "SALES", report.SalesCount.ToString());
         AddReportCard(cards, "QUEUE LOSSES", report.QueueLossCount.ToString());
         _page.AddChild(cards);
+        _page.AddChild(BuildSparklineCard(report.DayIndex));
         _page.AddChild(Card("EDITOR'S NOTE", BuildReportInsight(report)));
         Button nextDay = ActionButton("Start next day  →", Citrus, Ink);
         nextDay.Pressed += StartNextDay;
@@ -1097,6 +1206,20 @@ public partial class Main : Control
                 ShowReport(_commands.Snapshot().Report!);
             };
             unlockCard.AddChild(addBerry);
+            _page.AddChild(unlockCard);
+        }
+        else if (!_state.Progression.Has(MenuIds.Strong))
+        {
+            VBoxContainer unlockCard = Card("NEW RECIPE  ·  STRONG LEMONADE",
+                "A double-lemon variant priced at $5. Commuters gravitate to it during their rush hours. Uses more of your lemon budget — a hypothesis worth testing?");
+            Button addStrong = CompactButton("Add Strong to menu", Leaf, Cream);
+            addStrong.Pressed += () =>
+            {
+                _commands.Execute(new AddStrongToMenuCommand());
+                ShowToast("Strong Lemonade added to tomorrow's menu.");
+                ShowReport(_commands.Snapshot().Report!);
+            };
+            unlockCard.AddChild(addStrong);
             _page.AddChild(unlockCard);
         }
         _page.AddChild(UpgradeButton(UpgradeIds.BetterCounter, "Better counter", "$5.00", ProgressionService.BetterCounterCostMinor,
