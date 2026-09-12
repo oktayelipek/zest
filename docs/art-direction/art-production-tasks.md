@@ -36,7 +36,7 @@ no border, no signature. No photorealism, no 3D render, no anime, no chibi.
 
 ## Batch A — weather + stand cues (highest impact, smallest files)
 
-- [x] **A1. Rain awning overlay**
+- [ ] **A1. Rain awning overlay**
   - Path: `game/art/production/ai-layered-v01/weather-overlays/awning-rain.png`
   - Size: 170×136, transparent
   - Prompt:
@@ -63,7 +63,7 @@ no border, no signature. No photorealism, no 3D render, no anime, no chibi.
     background.
     ```
 
-- [x] **A3. Vendor rain hat**
+- [ ] **A3. Vendor rain hat**
   - Path: `game/art/production/ai-layered-v01/weather-overlays/vendor-rain-hat.png`
   - Size: 200×200, transparent
   - Prompt:
@@ -76,7 +76,7 @@ no border, no signature. No photorealism, no 3D render, no anime, no chibi.
     transparent background.
     ```
 
-- [x] **A4. Strong Lemonade menu flag**
+- [ ] **A4. Strong Lemonade menu flag**
   - Path: `game/art/production/ai-layered-v01/stand-overlays/strong-menu-flag.png`
   - Size: 96×80, transparent
   - Prompt:
