@@ -67,6 +67,9 @@ public partial class ProductionParkCanvas : Node2D
         TryAddOptionalProp("StandMenuBoard", "sign_stand_menu_v01.png", new(72, -6));
         TryAddOptionalProp("PondDuck", "prop_park_duck_idle_v01.png", new(212, -144));
         TryAddOptionalProp("BenchSongbird", "prop_park_songbird_idle_v01.png", new(-194, -6));
+        TryAddOptionalProp("EditorialBanner", "sign_banner_editorial_v01.png", new(-132, -8));
+        TryAddOptionalProp("PondWaterLily", "prop_water_lily_v01.png", new(180, -110));
+        TryAddOptionalProp("PondCattail", "prop_water_cattail_v01.png", new(240, -100));
         Stand = new ZestStandVisual { Name = "ZestStand", Position = new Vector2(0, 20), ZIndex = 1 };
         Stand.Configure(StandGridRoot);
         AddChild(Stand);
