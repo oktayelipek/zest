@@ -62,6 +62,11 @@ public partial class ProductionParkCanvas : Node2D
         AddAnimatedProp("LampSign", FinalGridRoot + "prop_lamp_sign_idle_v02.png", new(-132, 24), 1, 0);
         AddAnimatedProp("FlowerPlanter", FinalGridRoot + "prop_flower_planter_idle_v02.png", new(142, 35), 1, 0);
         AddAnimatedProp("WindBush", FinalGridRoot + "prop_bush_wind_4x1_v02.png", new(208, -16), 4, 3.5);
+        TryAddOptionalProp("EditorialChalkboard", "sign_chalkboard_editorial_v01.png", new(-92, 14));
+        TryAddOptionalProp("TrailSignpost", "sign_signpost_v01.png", new(268, 88));
+        TryAddOptionalProp("StandMenuBoard", "sign_stand_menu_v01.png", new(72, -6));
+        TryAddOptionalProp("PondDuck", "prop_park_duck_idle_v01.png", new(212, -144));
+        TryAddOptionalProp("BenchSongbird", "prop_park_songbird_idle_v01.png", new(-194, -6));
         Stand = new ZestStandVisual { Name = "ZestStand", Position = new Vector2(0, 20), ZIndex = 1 };
         Stand.Configure(StandGridRoot);
         AddChild(Stand);
@@ -73,6 +78,14 @@ public partial class ProductionParkCanvas : Node2D
         if (_background is null) return;
         Texture2D target = evening && _eveningBackground is not null ? _eveningBackground : _dayBackground;
         if (_background.Texture != target) _background.Texture = target;
+    }
+
+    /// <summary>Adds an idle prop only if the PNG exists — lets optional art land without editing this method.</summary>
+    private Node2D? TryAddOptionalProp(string name, string filename, Vector2 foot)
+    {
+        string path = FinalGridRoot + filename;
+        if (!ResourceLoader.Exists(path)) return null;
+        return AddAnimatedProp(name, path, foot, 1, 0);
     }
 
     private Node2D AddAnimatedProp(string name, string texturePath, Vector2 foot, int columns, double fps)
@@ -355,8 +368,8 @@ public partial class ZestStandVisual : Node2D
         _operatingState = operatingState;
         PreparedBatchCount = Mathf.Clamp(preparedBatchCount, 0, 3);
         _sprite.RegionRect = new Rect2((int)upgrade * 170, 0, 170, 136);
-        _layeredCandidate.Visible = upgrade == StandUpgradeVisual.Base;
-        _sprite.Visible = upgrade != StandUpgradeVisual.Base;
+        _layeredCandidate.Visible = true;
+        _sprite.Visible = false;
         _plaque.Visible = operatingState != StandOperatingVisual.Normal;
         _plaqueLabel.SetText(operatingState == StandOperatingVisual.RushMenu ? "RUSH MENU" : "SOLD OUT");
         _plaqueFace.Color = operatingState == StandOperatingVisual.RushMenu ? ZestStyle.Palette.ZestYellow : ZestStyle.Palette.Rust;

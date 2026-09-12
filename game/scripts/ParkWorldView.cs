@@ -309,10 +309,11 @@ public partial class ParkWorldView : SubViewportContainer
         _park.AddChild(_focusMarker);
 
         int[] ambientStarts = [0, 3, 6, 9];
+        string[] ambientSegments = ["commuter", "tourist", "student", "commuter"];
         for (int i = 0; i < ambientStarts.Length; i++)
         {
             HdCustomerActor walker = new() { Name = $"AmbientWalker_{i}" };
-            walker.Configure(walksRoute: true, i, Guid.Empty, ambientStarts[i]);
+            walker.Configure(walksRoute: true, i, Guid.Empty, ambientStarts[i], segmentId: ambientSegments[i % ambientSegments.Length]);
             walker.SetSimulationSpeed(_simulationSpeed);
             walker.SetReducedMotion(_reducedMotion);
             walker.ZIndex = 1;
