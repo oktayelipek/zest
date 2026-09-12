@@ -125,6 +125,8 @@ public partial class ZestStandVisual : Node2D
     private Polygon2D _plaqueFace = null!;
     private PixelWorldText _plaqueLabel = null!;
     private PreparedBatchCue _batchCue = null!;
+    private Sprite2D? _weatherOverlay;
+    private const string WeatherOverlayRoot = "res://art/production/ai-layered-v01/weather-overlays/";
     private StandOperatingVisual _operatingState;
     private double _motionTime;
 
@@ -179,6 +181,37 @@ public partial class ZestStandVisual : Node2D
     }
 
     public void SetVendorPose(VendorPose pose) => _vendor.SetPose(pose);
+
+    /// <summary>Swap the stand's weather-specific awning overlay. No-op if the art asset is not present yet.</summary>
+    public void SetWeatherOverlay(string? weatherId)
+    {
+        string? path = weatherId switch
+        {
+            "rain" => WeatherOverlayRoot + "awning-rain.png",
+            "sunny" => WeatherOverlayRoot + "awning-sun.png",
+            _ => null,
+        };
+        if (path is null || !ResourceLoader.Exists(path))
+        {
+            if (_weatherOverlay is not null) _weatherOverlay.Visible = false;
+            return;
+        }
+        if (_weatherOverlay is null)
+        {
+            _weatherOverlay = new Sprite2D
+            {
+                Name = "WeatherOverlay",
+                Centered = true,
+                Position = new Vector2(0, -110),
+                TextureFilter = TextureFilterEnum.Nearest,
+                ZIndex = 3,
+                Scale = Vector2.One * 0.11f,
+            };
+            AddChild(_weatherOverlay);
+        }
+        _weatherOverlay.Texture = ResourceLoader.Load<Texture2D>(path);
+        _weatherOverlay.Visible = true;
+    }
 
     public void SetPresentation(StandUpgradeVisual upgrade, StandOperatingVisual operatingState, int preparedBatchCount)
     {

@@ -212,6 +212,7 @@ public partial class ParkWorldView : SubViewportContainer
         Tween tween = _weatherTint.CreateTween();
         tween.TweenProperty(_weatherTint, "color", tint, 0.6);
         if (_rain is not null) _rain.SetActive(weatherId == "rain");
+        _park?.Stand.SetWeatherOverlay(weatherId);
     }
 
     public void SetReputation(int reputation)
